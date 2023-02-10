@@ -35,13 +35,15 @@ def get_username():
 def login(user, passwd, server):
     """Login to the server."""
     try:
-        session = winrm.Session(server, auth=(user, passwd))
-        if session.run_cmd("ipconfig").status_code == 0:
-            wsman = WSMan(server, ssl=False, auth="negotiate", encryption="auto", username=user,
-                          password=passwd, port=PORT, cert_validation=False, read_timeout=50)
-            return True, wsman
+        session = winrm.Session(server, auth=(user, passwd), transport='ntlm')
+        response = session.run_cmd("ipconfig")
+        if response.status_code != 0:
+            raise LoginError(f"Failed to run command. Response: {response.std_err}")
+        wsman = WSMan(server, ssl=True, auth="negotiate", encryption="auto", username=user,
+                      password=passwd, port=PORT, cert_validation=False, read_timeout=50)
+        return wsman
     except Exception as e:
-        return False, f"An error occurred 2: {e}"
+        raise LoginError(f"Failed to establish session. Error: {e}")
 
 
 def connect_to_server(ps, server):
@@ -77,12 +79,9 @@ def main():
     try:
         # Get user credentials
         user = get_username()
-        password = getpass_()
+        # password = getpass_()
         # Login to the server
-        login_success, wsman = login(user, password, IP_SERVERS["C5"])
-        if not login_success:
-            window_alert("Login failed")
-            return
+        wsman = login(user, "password", IP_SERVERS["C5"])
         # Run scripts
         with wsman, RunspacePool(wsman) as pool:
             try:
@@ -104,6 +103,10 @@ def main():
                 pool.close()
     except Exception as e:
         print(f"An error occurred 4: {e}")
+
+
+class LoginError(Exception):
+    pass
 
 
 if __name__ == '__main__':
