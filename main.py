@@ -7,18 +7,18 @@
 """
 
 import ast
+import subprocess
 from pypsrp.wsman import WSMan
 from pypsrp.powershell import PowerShell, RunspacePool
 import os
 from dotenv import load_dotenv
-import pysimplegui as sg
+import PySimpleGUI as sg
 
 
 # Load environment variables
 load_dotenv()
 USER = os.getenv("USER")
 PASSWORD = os.getenv("PASSWD")
-COMPUTER_NAME = os.getenv("COMPUTER_NAME")
 PORT = os.getenv("PORT")
 
 
@@ -26,18 +26,13 @@ PORT = os.getenv("PORT")
 IP_SERVERS = ast.literal_eval(os.getenv("IP_SERVERS"))
 
 
-def connect_to_server(pool, server):
+def connect_to_server(ps, server):
     """Connect to the server."""
-    ps = PowerShell(pool)
-    try:
-        ps.add_script(f"Connect-ManagementServer {server} -AcceptEula")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    ps.add_script(f"Connect-ManagementServer {server} -AcceptEula")
 
 
-def close_connection(pool):
+def close_connection(ps):
     """Close the connection to the server."""
-    ps = PowerShell(pool)
     try:
         ps.add_script("Disconnect-ManagementServer")
     except Exception as e:
@@ -61,50 +56,25 @@ def window_alert(message):
 def main():
     """Main function."""
     # Create a new PowerShell session
-    wsman = WSMan(IP_SERVERS["C5"], ssl=False, auth="negotiate", encryption="always", username=USER, password=PASSWORD,
-                  port=PORT, cert_validation=False)
+    wsman = WSMan(IP_SERVERS['C5'], ssl=False, auth="negotiate", encryption="auto", username=USER, password=PASSWORD,
+                  port=PORT, cert_validation=False, read_timeout=50)
     with wsman, RunspacePool(wsman) as pool:
         # Connect to the server
         ps = PowerShell(pool)
-        try:
-            connect_to_server(ps, IP_SERVERS["C5"])
-            # ps.add_script("Connect-ManagementServer 10.0.131.125 -AcceptEula")
-            ps.add_statement()
-            ps.add_script(
-                "(Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera")
-            output = ps.invoke()
-            print(output)
-        except Exception as e:
-            print(f"An error occurred: {e}")
-        finally:
-            ps.add_statement()
-            close_connection(ps)
-            wsman.close()
+        # connect_to_server(ps, IP_SERVERS["C5"])
+        # ps.add_script("Connect-ManagementServer " + server + " -AcceptEula")
+        ps.add_script("Connect-ManagementServer 10.0.131.125 -AcceptEula")
+        ps.add_statement()
+        ps.add_script(
+            "(Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId")
+        # close_connection(ps)
+        output = ps.invoke()
+        print(output)
+        # try:
+        #
+        # except Exception as e:
+        #     print(f"An error occurred: {e}")
 
-
-
-
-    # uri = "http://{}:5985/wsman".format(IP_SERVERS["C5"])
-    # wsman = WSMan(IP_SERVERS['C5'], ssl=False, auth="negotiate", username=USER, password=PASSWORD, port=3389,
-    #               encryption="never", connection_timeout=30)
-    # wsman.close()
-    # with wsman, WinRS(wsman) as shell:
-    #     print(wsman)
-    #     process = Process(shell, "dir")
-    #     process.invoke()
-    #     process.signal(SignalCode.CTRL_C)
-    #
-    #     # execute a process with arguments in the background
-    #     process = Process(shell, "powershell", ["gci", "$pwd"])
-    #     process.begin_invoke()  # start the invocation and return immediately
-    #     process.poll_invoke()  # update the output stream
-    #     process.end_invoke()  # finally wait until the process is finished
-    #     process.signal(SignalCode.CTRL_C)
-    #     wsman.close()
-    # commands = ["Connect-ManagementServer 10.0.131.125 (Get-Credential)", "(Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera | " \
-    #           "Out-Gridview", "Disconnect-ManagementServer"]
-    # for command in commands:
-    #     subprocess.run(["powershell.exe", "-Command", command], shell=True, check=True)
 
 if __name__ == '__main__':
     main()
