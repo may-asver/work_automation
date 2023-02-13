@@ -29,21 +29,30 @@ def get_username():
         user = os.getlogin()
         return user
     except Exception as e:
-        print(f"An error occurred: {e}")
+        window_alert(f"An error occurred while getting username: {e}")
 
 
-def login(user, passwd, server):
+def get_password(user):
+    """Get the password."""
+    while True:
+        password = getpass_()
+        try:
+            session = winrm.Session(IP_SERVERS["C5"], auth=(user, password), transport='ntlm')
+            response = session.run_cmd("ipconfig")
+            if response.status_code == 0:
+                break
+            return password
+        except Exception as e:
+            window_alert(f"An error occurred while login: {e}")
+
+
+def login(server):
     """Login to the server."""
-    try:
-        session = winrm.Session(server, auth=(user, passwd), transport='ntlm')
-        response = session.run_cmd("ipconfig")
-        if response.status_code != 0:
-            raise LoginError(f"Failed to run command. Response: {response.std_err}")
-        wsman = WSMan(server, ssl=True, auth="negotiate", encryption="auto", username=user,
-                      password=passwd, port=PORT, cert_validation=False, read_timeout=50)
-        return wsman
-    except Exception as e:
-        raise LoginError(f"Failed to establish session. Error: {e}")
+    user = get_username()
+    passwd = get_password(user)
+    wsman = WSMan(server, ssl=False, auth="negotiate", encryption="auto", username=user,
+                  password=passwd, port=PORT, cert_validation=False, read_timeout=50)
+    return wsman
 
 
 def connect_to_server(ps, server):
@@ -57,16 +66,16 @@ def close_connection_powershell(ps):
     try:
         ps.add_script("Disconnect-ManagementServer")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred trying close the connection with server: {e}")
     finally:
         window_alert("Connection closed")
 
 
 def window_alert(message):
     """Create a window to alert the user."""
-    layout = [[sg.Text(message)],
-              [sg.Button("Ok")]]
-    window = sg.Window("Alert", layout)
+    layout = [[sg.Text(message, size=(30, 4), justification="center")],
+              [sg.Button("Ok", border_width=3, size=(7, 1))]]
+    window = sg.Window("Alert", layout, element_justification="center")
     while True:
         event, values = window.read()
         if event == "Ok" or event == sg.WIN_CLOSED:
@@ -77,11 +86,8 @@ def window_alert(message):
 def main():
     """Main function."""
     try:
-        # Get user credentials
-        user = get_username()
-        # password = getpass_()
         # Login to the server
-        wsman = login(user, "password", IP_SERVERS["C5"])
+        wsman = login(IP_SERVERS["C5"])
         # Run scripts
         with wsman, RunspacePool(wsman) as pool:
             try:
@@ -95,18 +101,14 @@ def main():
                 output = ps.invoke()
                 print(output)
             except Exception as e:
-                print(f"An error occurred 3: {e}")
+                window_alert(f"An error occurred running the script: {e}")
                 return
             finally:
                 # Close the connection
                 close_connection_powershell(ps)
                 pool.close()
     except Exception as e:
-        print(f"An error occurred 4: {e}")
-
-
-class LoginError(Exception):
-    pass
+        window_alert(f"An error occurred: {e}")
 
 
 if __name__ == '__main__':
