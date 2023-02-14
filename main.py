@@ -14,20 +14,42 @@ from pypsrp.powershell import PowerShell, RunspacePool
 import os
 from dotenv import load_dotenv
 import PySimpleGUI as sg
+from cryptography.fernet import Fernet
 
 # Load environment variables
 load_dotenv()
-PORT = os.getenv("PORT")
-PASSWD = os.getenv("PASSWORD")
-
-# Dictionary with the IP of the servers
-IP_SERVERS = ast.literal_eval(os.getenv("IP_SERVERS"))
 
 
-def get_username():
-    """Get the username."""
+class User(object):
+    __key__ = Fernet.generate_key()
+
+    def __init__(self, username: str, password: str):
+        self.username = username
+        self.password = password
+        self.password = User.__encrypt__(self).decode("utf-8")
+
+    def get_username(self):
+        return self.username
+
+    def get_password(self):
+        return User.__decrypt__(self)
+
+    def __encrypt__(self):
+        """Encrypt the password."""
+        f = Fernet(User.__key__)
+        return f.encrypt(self.password.encode("utf-8"))
+
+    def __decrypt__(self):
+        """Decrypt the password."""
+        f = Fernet(User.__key__)
+        return f.decrypt(self.password.encode("utf-8")).decode("utf-8")
+
+
+def create_user():
+    """Create user."""
     try:
-        user = os.getlogin()
+        passwd = get_password(os.getlogin())
+        user = User(os.getlogin(), passwd)
         return user
     except Exception as e:
         window_alert(f"An error occurred while getting username: {e}")
@@ -35,6 +57,8 @@ def get_username():
 
 def get_password(user):
     """Get the password."""
+    # Dictionary with the IP of the servers
+    IP_SERVERS = ast.literal_eval(os.getenv("IP_SERVERS"))
     while True:
         print(f"Enter the password for {user}: \n")
         password = getpass_()
@@ -42,18 +66,16 @@ def get_password(user):
             session = winrm.Session(IP_SERVERS["C5"], auth=(user, password), transport='ntlm')
             response = session.run_cmd("ipconfig")
             if response.status_code == 0:
-                break
-            return password
+                return password
         except Exception as e:
             window_alert(f"An error occurred while login: {e}")
 
 
-def login(server):
+def login(user, server):
     """Login to the server."""
-    user = get_username()
-    passwd = get_password(user)
-    wsman = WSMan(server, ssl=False, auth="negotiate", encryption="always", username=user,
-                  password=passwd, port=PORT, cert_validation=False)
+    PORT = os.getenv("PORT")
+    wsman = WSMan(server, ssl=False, auth="negotiate", encryption="always", username=user.get_username(),
+                  password=user.get_password(), port=PORT, cert_validation=False)
     return wsman
 
 
@@ -98,11 +120,13 @@ def response_to_csv(response):
 
 def main():
     """Main function."""
-
+    user = create_user()
+    # Dictionary with the IP of the servers
+    IP_SERVERS = ast.literal_eval(os.getenv("IP_SERVERS"))
     for server in IP_SERVERS.values():
         try:
             # Login to the server
-            wsman = login(server)
+            wsman = login(user, server)
             # Run scripts
             with wsman, RunspacePool(wsman) as pool:
                 try:
