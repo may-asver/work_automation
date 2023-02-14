@@ -14,10 +14,13 @@ from pypsrp.powershell import PowerShell, RunspacePool
 import os
 from dotenv import load_dotenv
 import PySimpleGUI as sg
+import csv
+import pandas as pd
 
 # Load environment variables
 load_dotenv()
 PORT = os.getenv("PORT")
+PASSWD = os.getenv("PASSWORD")
 
 # Dictionary with the IP of the servers
 IP_SERVERS = ast.literal_eval(os.getenv("IP_SERVERS"))
@@ -49,9 +52,9 @@ def get_password(user):
 def login(server):
     """Login to the server."""
     user = get_username()
-    passwd = get_password(user)
-    wsman = WSMan(server, ssl=False, auth="negotiate", encryption="auto", username=user,
-                  password=passwd, port=PORT, cert_validation=False, read_timeout=50)
+    # passwd = get_password(user)
+    wsman = WSMan(server, ssl=False, auth="negotiate", encryption="always", username=user,
+                  password=PASSWD, port=PORT, cert_validation=False)
     return wsman
 
 
@@ -83,25 +86,37 @@ def window_alert(message):
     window.close()
 
 
+def response_to_csv(response):
+    """Save the response to a csv file."""
+    try:
+        with open("cameras_not_responding.csv", "w") as f:
+            for item in response:
+                f.write(f"{item}\n")
+        window_alert("The response was saved successfully")
+    except Exception as e:
+        window_alert(f"An error occurred saving the response: {e}")
+
+
 def main():
     """Main function."""
     try:
         # Login to the server
-        wsman = login(IP_SERVERS["C5"])
+        SERVER = IP_SERVERS["Vallarta"]
+        wsman = login(SERVER)
         # Run scripts
         with wsman, RunspacePool(wsman) as pool:
             try:
                 # Connect to the server
                 ps = PowerShell(pool)
-                connect_to_server(ps, IP_SERVERS["C5"])
+                connect_to_server(ps, SERVER)
                 # Get the cameras' id which are not responding
                 ps.add_script(
-                    "(Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId")
+                    "(Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera")
                 # Execute the script
                 output = ps.invoke()
-                print(output)
+                response_to_csv(output)
             except Exception as e:
-                window_alert(f"An error occurred running the script: {e}")
+                window_alert(f"An error occurred: {e}")
                 return
             finally:
                 # Close the connection
