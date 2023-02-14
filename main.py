@@ -25,8 +25,7 @@ class User(object):
 
     def __init__(self, username: str, password: str):
         self.username = username
-        self.password = password
-        self.password = User.__encrypt__(self).decode("utf-8")
+        User.__encrypt__(self, password)
 
     def get_username(self):
         return self.username
@@ -34,15 +33,15 @@ class User(object):
     def get_password(self):
         return User.__decrypt__(self)
 
-    def __encrypt__(self):
+    def __encrypt__(self, password):
         """Encrypt the password."""
         f = Fernet(User.__key__)
-        return f.encrypt(self.password.encode("utf-8"))
+        self.password = f.encrypt(password.encode("utf-8"))
 
     def __decrypt__(self):
         """Decrypt the password."""
         f = Fernet(User.__key__)
-        return f.decrypt(self.password.encode("utf-8")).decode("utf-8")
+        return f.decrypt(self.password).decode("utf-8")
 
 
 def create_user():
