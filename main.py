@@ -14,8 +14,6 @@ from pypsrp.powershell import PowerShell, RunspacePool
 import os
 from dotenv import load_dotenv
 import PySimpleGUI as sg
-import csv
-import pandas as pd
 
 # Load environment variables
 load_dotenv()
@@ -38,6 +36,7 @@ def get_username():
 def get_password(user):
     """Get the password."""
     while True:
+        print(f"Enter the password for {user}: \n")
         password = getpass_()
         try:
             session = winrm.Session(IP_SERVERS["C5"], auth=(user, password), transport='ntlm')
@@ -52,9 +51,9 @@ def get_password(user):
 def login(server):
     """Login to the server."""
     user = get_username()
-    # passwd = get_password(user)
+    passwd = get_password(user)
     wsman = WSMan(server, ssl=False, auth="negotiate", encryption="always", username=user,
-                  password=PASSWD, port=PORT, cert_validation=False)
+                  password=passwd, port=PORT, cert_validation=False)
     return wsman
 
 
@@ -99,32 +98,35 @@ def response_to_csv(response):
 
 def main():
     """Main function."""
-    try:
-        # Login to the server
-        SERVER = IP_SERVERS["Vallarta"]
-        wsman = login(SERVER)
-        # Run scripts
-        with wsman, RunspacePool(wsman) as pool:
-            try:
-                # Connect to the server
-                ps = PowerShell(pool)
-                connect_to_server(ps, SERVER)
-                # Get the cameras' id which are not responding
-                ps.add_script(
-                    "(Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera")
-                # Execute the script
-                output = ps.invoke()
-                response_to_csv(output)
-            except Exception as e:
-                window_alert(f"An error occurred: {e}")
-                return
-            finally:
-                # Close the connection
-                close_connection_powershell(ps)
-                pool.close()
-    except Exception as e:
-        window_alert(f"An error occurred: {e}")
+
+    for server in IP_SERVERS.values():
+        try:
+            # Login to the server
+            wsman = login(server)
+            # Run scripts
+            with wsman, RunspacePool(wsman) as pool:
+                try:
+                    # Connect to the server
+                    ps = PowerShell(pool)
+                    connect_to_server(ps, server)
+                    # Get the cameras' id which are not responding
+                    ps.add_script(
+                        "(Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera")
+                    # Execute the script
+                    output = ps.invoke()
+                    response_to_csv(output)
+                except Exception as e:
+                    window_alert(f"An error occurred: {e}")
+                    return
+                finally:
+                    # Close the connection
+                    close_connection_powershell(ps)
+                    pool.close()
+        except Exception as e:
+            window_alert(f"An error occurred: {e}")
 
 
 if __name__ == '__main__':
-    main()
+    while True:
+        main()
+        break
