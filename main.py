@@ -74,7 +74,7 @@ def get_password(user):
 def login(user, server):
     """Login to the server."""
     PORT = os.getenv("PORT")
-    wsman = WSMan(server, ssl=False, auth="negotiate", encryption="always", username=user.get_username(),
+    wsman = WSMan(server, ssl=True, auth="negotiate", encryption="auto", username="EUJAL\\" + user.get_username(),
                   password=user.get_password(), port=PORT, cert_validation=False)
     return wsman
 
@@ -175,4 +175,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    while True:
+        main()
