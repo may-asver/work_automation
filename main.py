@@ -14,6 +14,8 @@ from pypsrp.powershell import PowerShell, RunspacePool
 import os
 from dotenv import load_dotenv
 import PySimpleGUI as sg
+import pandas as pd
+import openpyxl
 from cryptography.fernet import Fernet
 
 # Load environment variables
@@ -106,13 +108,27 @@ def window_alert(message):
     window.close()
 
 
-def response_to_csv(response):
+def response_to_csv(response, server):
     """Save the response to a csv file."""
+    # try:
+    #     with open("cameras_not_responding.csv", "w") as f:
+    #         for item in response:
+    #             f.write(f"{item}\n")
+    #     window_alert("The response was saved successfully")
+    # except Exception as e:
+    #     window_alert(f"An error occurred saving the response: {e}")
     try:
-        with open("cameras_not_responding.csv", "w") as f:
-            for item in response:
-                f.write(f"{item}\n")
-        window_alert("The response was saved successfully")
+        if not os.path.exists("cameras_not_responding.xlsx"):
+            # Create a workbook
+            workbook = openpyxl.Workbook()
+
+        else:
+            # Write the dataframe to a worksheet in a csv file
+            with pd.ExcelWriter("cameras_not_responding.xlsx", mode="w") as writer:
+                df = pd.DataFrame(response)
+                df.to_excel(writer, sheet_name=server)
+            window_alert(f"The response for {server} was saved successfully")
+
     except Exception as e:
         window_alert(f"An error occurred saving the response: {e}")
 
@@ -137,7 +153,7 @@ def main():
                         "(Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera")
                     # Execute the script
                     output = ps.invoke()
-                    response_to_csv(output)
+                    response_to_csv(output, server)
                 except Exception as e:
                     window_alert(f"An error occurred: {e}")
                     return
