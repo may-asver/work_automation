@@ -14,7 +14,6 @@ from pypsrp.powershell import PowerShell, RunspacePool
 import os
 from dotenv import load_dotenv
 import PySimpleGUI as sg
-import pandas as pd
 import openpyxl
 from cryptography.fernet import Fernet
 
@@ -108,27 +107,34 @@ def window_alert(message):
     window.close()
 
 
-def response_to_csv(response, server):
-    """Save the response to a csv file."""
-    # try:
-    #     with open("cameras_not_responding.csv", "w") as f:
-    #         for item in response:
-    #             f.write(f"{item}\n")
-    #     window_alert("The response was saved successfully")
-    # except Exception as e:
-    #     window_alert(f"An error occurred saving the response: {e}")
+def response_to_xlsx(response, server):
+    """Save the response to a xlsx file."""
     try:
         if not os.path.exists("cameras_not_responding.xlsx"):
             # Create a workbook
             workbook = openpyxl.Workbook()
-
+            sheet = workbook.create_sheet(server)
+            # Write data to the workbook
+            for index in range(len(response)):
+                sheet.cell(row=index + 1, column=1).value = response[index].__str__()
+            # Save the workbook
+            workbook.save("cameras_not_responding.xlsx")
+            workbook.close()
         else:
-            # Write the dataframe to a worksheet in a csv file
-            with pd.ExcelWriter("cameras_not_responding.xlsx", mode="w") as writer:
-                df = pd.DataFrame(response)
-                df.to_excel(writer, sheet_name=server)
-            window_alert(f"The response for {server} was saved successfully")
-
+            # Open the workbook
+            workbook = openpyxl.load_workbook("cameras_not_responding.xlsx")
+            # Select the sheet
+            if not server in workbook.sheetnames:
+                sheet = workbook.create_sheet(server)
+            else:
+                sheet = workbook[server]
+            # Write data to the workbook
+            for index in range(len(response)):
+                sheet.cell(row=index + 1, column=1).value = response[index].__str__()
+            # Save the workbook
+            workbook.save("cameras_not_responding.xlsx")
+            workbook.close()
+        window_alert(f"The response for {server} was saved successfully")
     except Exception as e:
         window_alert(f"An error occurred saving the response: {e}")
 
@@ -138,34 +144,35 @@ def main():
     user = create_user()
     # Dictionary with the IP of the servers
     IP_SERVERS = ast.literal_eval(os.getenv("IP_SERVERS"))
-    for server in IP_SERVERS.values():
-        try:
-            # Login to the server
-            wsman = login(user, server)
-            # Run scripts
-            with wsman, RunspacePool(wsman) as pool:
-                try:
-                    # Connect to the server
-                    ps = PowerShell(pool)
-                    connect_to_server(ps, server)
-                    # Get the cameras' id which are not responding
-                    ps.add_script(
-                        "(Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera")
-                    # Execute the script
-                    output = ps.invoke()
-                    response_to_csv(output, server)
-                except Exception as e:
-                    window_alert(f"An error occurred: {e}")
-                    return
-                finally:
-                    # Close the connection
-                    close_connection_powershell(ps)
-                    pool.close()
-        except Exception as e:
-            window_alert(f"An error occurred: {e}")
+    server = IP_SERVERS["Lagos"]
+    # for server in IP_SERVERS.values():
+    try:
+        # Login to the server
+        wsman = login(user, server)
+        # Run scripts
+        with wsman, RunspacePool(wsman) as pool:
+            try:
+                # Connect to the server
+                ps = PowerShell(pool)
+                connect_to_server(ps, server)
+                # Get the cameras' id which are not responding
+                ps.add_script(
+                    "(Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera")
+                # Execute the script
+                output = ps.invoke()
+                for item in output:
+                    print(item)
+                response_to_xlsx(output, server)
+            except Exception as e:
+                window_alert(f"An error occurred: {e}")
+                return
+            finally:
+                # Close the connection
+                close_connection_powershell(ps)
+                pool.close()
+    except Exception as e:
+        window_alert(f"An error occurred: {e}")
 
 
 if __name__ == '__main__':
-    while True:
-        main()
-        break
+    main()
