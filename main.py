@@ -7,8 +7,11 @@
 
 # Import libraries
 import ast
+import socket
+
 from getpass_asterisk.getpass_asterisk import getpass_asterisk as getpass_
 from pypsrp.wsman import WSMan
+from socket import gethostname
 import winrm
 from pypsrp.powershell import PowerShell, RunspacePool
 import os
@@ -74,7 +77,9 @@ def get_password(user):
 def login(user, server):
     """Login to the server."""
     PORT = os.getenv("PORT")
-    wsman = WSMan(server, ssl=True, auth="negotiate", encryption="auto", username="EUJAL\\" + user.get_username(),
+    dominio = os.getenv("DOMAIN_2".__add__("\\")) if socket.getfqdn(gethostname()) == os.getenv("DOMAIN_1") else \
+        os.getenv("DOMAIN_2").__add__("\\")
+    wsman = WSMan(server, ssl=False, auth="negotiate", encryption="always", username=dominio + user.get_username(),
                   password=user.get_password(), port=PORT, cert_validation=False)
     return wsman
 
@@ -97,7 +102,7 @@ def close_connection_powershell(ps):
 
 def window_alert(message):
     """Create a window to alert the user."""
-    layout = [[sg.Text(message, size=(30, 4), justification="center")],
+    layout = [[sg.Text(message, size=(50, 4), justification="center")],
               [sg.Button("Ok", border_width=3, size=(7, 1))]]
     window = sg.Window("Alert", layout, element_justification="center")
     while True:
@@ -144,36 +149,33 @@ def main():
     user = create_user()
     # Dictionary with the IP of the servers
     IP_SERVERS = ast.literal_eval(os.getenv("IP_SERVERS"))
-    server = IP_SERVERS["Lagos"]
-    # for server in IP_SERVERS.values():
-    try:
-        # Login to the server
-        wsman = login(user, server)
-        # Run scripts
-        with wsman, RunspacePool(wsman) as pool:
-            try:
-                # Connect to the server
-                ps = PowerShell(pool)
-                connect_to_server(ps, server)
-                # Get the cameras' id which are not responding
-                ps.add_script(
-                    "(Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera")
-                # Execute the script
-                output = ps.invoke()
-                for item in output:
-                    print(item)
-                response_to_xlsx(output, server)
-            except Exception as e:
-                window_alert(f"An error occurred: {e}")
-                return
-            finally:
-                # Close the connection
-                close_connection_powershell(ps)
-                pool.close()
-    except Exception as e:
-        window_alert(f"An error occurred: {e}")
+    # server = IP_SERVERS["C5"]
+    for server in IP_SERVERS.values():
+        try:
+            # Login to the server
+            wsman = login(user, server)
+            # Run scripts
+            with wsman, RunspacePool(wsman) as pool:
+                try:
+                    # Connect to the server
+                    ps = PowerShell(pool)
+                    connect_to_server(ps, server)
+                    # Get the cameras' id which are not responding
+                    ps.add_script(
+                        "(Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera")
+                    # Execute the script
+                    output = ps.invoke()
+                    response_to_xlsx(output, server)
+                except Exception as e:
+                    window_alert(f"An error occurred: {e}")
+                    return
+                finally:
+                    # Close the connection
+                    close_connection_powershell(ps)
+                    pool.close()
+        except Exception as e:
+            window_alert(f"An error occurred: {e}")
 
 
 if __name__ == '__main__':
-    while True:
-        main()
+    main()
