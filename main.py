@@ -13,6 +13,7 @@ from getpass_asterisk.getpass_asterisk import getpass_asterisk as getpass_
 from pypsrp.wsman import WSMan
 from socket import gethostname
 import winrm
+import subprocess
 from pypsrp.powershell import PowerShell, RunspacePool
 import os
 from dotenv import load_dotenv
@@ -77,27 +78,29 @@ def get_password(user):
 def login(user, server):
     """Login to the server."""
     PORT = os.getenv("PORT")
-    dominio = os.getenv("DOMAIN_2".__add__("\\")) if socket.getfqdn(gethostname()) == os.getenv("DOMAIN_1") else \
-        os.getenv("DOMAIN_2").__add__("\\")
-    wsman = WSMan(server, ssl=False, auth="negotiate", encryption="always", username=dominio + user.get_username(),
-                  password=user.get_password(), port=PORT, cert_validation=False)
+    dominio = os.getenv("DOMAIN_2").__add__("\\")
+    wsman = WSMan(server, username=os.getenv("USER"), ssl=False,
+                  password=os.getenv("PASSWD"), port=PORT, cert_validation=False)
+    print(wsman.get_server_config())
     return wsman
 
 
-def connect_to_server(ps, server):
+def connect_to_server(server):
     """Connect to the server."""
-    ps.add_script(f"Connect-ManagementServer {server} -AcceptEula")
-    ps.add_statement()
+    # ps.add_script(f"Connect-ManagementServer {server} -AcceptEula")
+    # ps.add_statement()
+    subprocess.run(["powershell", "-Command", f"Connect-ManagementServer {server} (Get-Credential) -BasicUser -AcceptEula"])
 
 
-def close_connection_powershell(ps):
+def close_connection_powershell():
     """Close the connection to the server."""
-    try:
-        ps.add_script("Disconnect-ManagementServer")
-    except Exception as e:
-        print(f"An error occurred trying close the connection with server: {e}")
-    finally:
-        window_alert("Connection closed")
+    subprocess.run(["powershell", "-Command", "Disconnect-ManagementServer"])
+    # try:
+    #     ps.add_script("Disconnect-ManagementServer")
+    # except Exception as e:
+    #     print(f"An error occurred trying close the connection with server: {e}")
+    # finally:
+    #     window_alert("Connection closed")
 
 
 def window_alert(message):
@@ -112,6 +115,11 @@ def window_alert(message):
     window.close()
 
 
+def clear_response(response):
+    """Clear the response of server"""
+    pass
+
+
 def response_to_xlsx(response, server):
     """Save the response to a xlsx file."""
     try:
@@ -120,11 +128,9 @@ def response_to_xlsx(response, server):
             workbook = openpyxl.Workbook()
             sheet = workbook.create_sheet(server)
             # Write data to the workbook
+            # sheet.append(response.split("\r\n"))
             for index in range(len(response)):
                 sheet.cell(row=index + 1, column=1).value = response[index].__str__()
-            # Save the workbook
-            workbook.save("cameras_not_responding.xlsx")
-            workbook.close()
         else:
             # Open the workbook
             workbook = openpyxl.load_workbook("cameras_not_responding.xlsx")
@@ -134,11 +140,12 @@ def response_to_xlsx(response, server):
             else:
                 sheet = workbook[server]
             # Write data to the workbook
+            # sheet.append(response[0])
             for index in range(len(response)):
                 sheet.cell(row=index + 1, column=1).value = response[index].__str__()
-            # Save the workbook
-            workbook.save("cameras_not_responding.xlsx")
-            workbook.close()
+        # Save the workbook
+        workbook.save("cameras_not_responding.xlsx")
+        workbook.close()
         window_alert(f"The response for {server} was saved successfully")
     except Exception as e:
         window_alert(f"An error occurred saving the response: {e}")
@@ -146,35 +153,47 @@ def response_to_xlsx(response, server):
 
 def main():
     """Main function."""
-    user = create_user()
+    # user = create_user()
     # Dictionary with the IP of the servers
     IP_SERVERS = ast.literal_eval(os.getenv("IP_SERVERS"))
-    # server = IP_SERVERS["C5"]
-    for server in IP_SERVERS.values():
-        try:
-            # Login to the server
-            wsman = login(user, server)
-            # Run scripts
-            with wsman, RunspacePool(wsman) as pool:
-                try:
-                    # Connect to the server
-                    ps = PowerShell(pool)
-                    connect_to_server(ps, server)
-                    # Get the cameras' id which are not responding
-                    ps.add_script(
-                        "(Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera")
-                    # Execute the script
-                    output = ps.invoke()
-                    response_to_xlsx(output, server)
-                except Exception as e:
-                    window_alert(f"An error occurred: {e}")
-                    return
-                finally:
-                    # Close the connection
-                    close_connection_powershell(ps)
-                    pool.close()
-        except Exception as e:
-            window_alert(f"An error occurred: {e}")
+    server = IP_SERVERS["Lagos"]
+    # Login to the server
+    # connect_to_server(server)
+    command = f"""Connect-ManagementServer {server} (Get-Credential) -BasicUser -AcceptEula
+              (Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera
+              Disconnect-ManagementServer"""
+    result = subprocess.run(["powershell", "-Command", command], capture_output=True, text=True)
+    response_to_xlsx(result.stdout.split(), server)
+    print(result.stdout.split())
+    print(result.stderr)
+    # close_connection_powershell()
+    # for server in IP_SERVERS.values():
+    #     try:
+    #         # Login to the server
+    #         wsman = login(None, server)
+    #         # Run scripts
+    #         with wsman, RunspacePool(wsman) as pool:
+    #             try:
+    #                 # Connect to the server
+    #                 ps = PowerShell(pool)
+    #                 connect_to_server(ps, server)
+    #                 # Get the cameras' id which are not responding
+    #                 ps.add_script(
+    #                     "(Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera")
+    #                 # Execute the script
+    #                 output = ps.invoke()
+    #                 print(output)
+    #                 response_to_xlsx(output, server)
+    #             except Exception as e:
+    #                 window_alert(f"An error occurred: {e}")
+    #                 return
+    #             finally:
+    #                 # Close the connection
+    #                 close_connection_powershell(ps)
+    #                 pool.close()
+    #     except Exception as e:
+    #         window_alert(f"An error occurred: {e}")
+
 
 
 if __name__ == '__main__':
