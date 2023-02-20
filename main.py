@@ -7,14 +7,13 @@
 
 # Import libraries
 import ast
-import socket
-
+# import socket
 from getpass_asterisk.getpass_asterisk import getpass_asterisk as getpass_
 from pypsrp.wsman import WSMan
-from socket import gethostname
+# from socket import gethostname
 import winrm
 import subprocess
-from pypsrp.powershell import PowerShell, RunspacePool
+# from pypsrp.powershell import PowerShell, RunspacePool
 import os
 from dotenv import load_dotenv
 import PySimpleGUI as sg
@@ -79,28 +78,26 @@ def login(user, server):
     """Login to the server."""
     PORT = os.getenv("PORT")
     dominio = os.getenv("DOMAIN_2").__add__("\\")
-    wsman = WSMan(server, username=os.getenv("USER"), ssl=False,
-                  password=os.getenv("PASSWD"), port=PORT, cert_validation=False)
+    wsman = WSMan(server, username=user.get_username(), ssl=False,
+                  password=user.get_password(), port=PORT, cert_validation=False)
     print(wsman.get_server_config())
     return wsman
 
 
-def connect_to_server(server):
+def connect_to_server(ps, server):
     """Connect to the server."""
-    # ps.add_script(f"Connect-ManagementServer {server} -AcceptEula")
-    # ps.add_statement()
-    subprocess.run(["powershell", "-Command", f"Connect-ManagementServer {server} (Get-Credential) -BasicUser -AcceptEula"])
+    ps.add_script(f"Connect-ManagementServer {server} -AcceptEula")
+    ps.add_statement()
 
 
-def close_connection_powershell():
+def close_connection_powershell(ps):
     """Close the connection to the server."""
-    subprocess.run(["powershell", "-Command", "Disconnect-ManagementServer"])
-    # try:
-    #     ps.add_script("Disconnect-ManagementServer")
-    # except Exception as e:
-    #     print(f"An error occurred trying close the connection with server: {e}")
-    # finally:
-    #     window_alert("Connection closed")
+    try:
+        ps.add_script("Disconnect-ManagementServer")
+    except Exception as e:
+        print(f"An error occurred trying close the connection with server: {e}")
+    finally:
+        window_alert("Connection closed")
 
 
 def window_alert(message):
@@ -113,11 +110,6 @@ def window_alert(message):
         if event == "Ok" or event == sg.WIN_CLOSED:
             break
     window.close()
-
-
-def clear_response(response):
-    """Clear the response of server"""
-    pass
 
 
 def response_to_xlsx(response, server):
@@ -149,45 +141,17 @@ def response_to_xlsx(response, server):
 
 def main():
     """Main function."""
-    # user = create_user()
-    # Dictionary with the IP of the servers
-    IP_SERVERS = ast.literal_eval(os.getenv("IP_SERVERS"))
-    server = IP_SERVERS["Lagos"]
-    # Login to the server
-    # connect_to_server(server)
-    command = f"""Connect-ManagementServer {server} (Get-Credential) -BasicUser -AcceptEula
-              (Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera | 
-              Select-Object Name
-              Disconnect-ManagementServer"""
-    result = subprocess.run(["powershell", "-Command", command], capture_output=True, text=True)
-    response_to_xlsx(result.stdout.split('\n'), server)
-    # close_connection_powershell()
-    # for server in IP_SERVERS.values():
-    #     try:
-    #         # Login to the server
-    #         wsman = login(None, server)
-    #         # Run scripts
-    #         with wsman, RunspacePool(wsman) as pool:
-    #             try:
-    #                 # Connect to the server
-    #                 ps = PowerShell(pool)
-    #                 connect_to_server(ps, server)
-    #                 # Get the cameras' id which are not responding
-    #                 ps.add_script(
-    #                     "(Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera")
-    #                 # Execute the script
-    #                 output = ps.invoke()
-    #                 print(output)
-    #                 response_to_xlsx(output, server)
-    #             except Exception as e:
-    #                 window_alert(f"An error occurred: {e}")
-    #                 return
-    #             finally:
-    #                 # Close the connection
-    #                 close_connection_powershell(ps)
-    #                 pool.close()
-    #     except Exception as e:
-    #         window_alert(f"An error occurred: {e}")
+    try:
+        # Dictionary with the IP of the servers
+        IP_SERVERS = ast.literal_eval(os.getenv("IP_SERVERS"))
+        for server in IP_SERVERS.values():
+            command = os.getenv("COMMAND").format(server)
+            # print(type(command))
+            result = subprocess.run(["powershell", "-Command", command], capture_output=True, text=True)
+            response_to_xlsx(result.stdout.split('\n'), server)
+        window_alert("Process finished successfully")
+    except Exception as e:
+        window_alert(f"An error occurred: {e}")
 
 
 if __name__ == '__main__':
