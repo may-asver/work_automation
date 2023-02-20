@@ -126,23 +126,19 @@ def response_to_xlsx(response, server):
         if not os.path.exists("cameras_not_responding.xlsx"):
             # Create a workbook
             workbook = openpyxl.Workbook()
-            sheet = workbook.create_sheet(server)
-            # Write data to the workbook
-            # sheet.append(response.split("\r\n"))
-            for index in range(len(response)):
-                sheet.cell(row=index + 1, column=1).value = response[index].__str__()
+            sheet = workbook.active
+            sheet.title = server
         else:
             # Open the workbook
             workbook = openpyxl.load_workbook("cameras_not_responding.xlsx")
             # Select the sheet
-            if not server in workbook.sheetnames:
-                sheet = workbook.create_sheet(server)
-            else:
+            if server in workbook.sheetnames:
                 sheet = workbook[server]
-            # Write data to the workbook
-            # sheet.append(response[0])
-            for index in range(len(response)):
-                sheet.cell(row=index + 1, column=1).value = response[index].__str__()
+            else:
+                sheet = workbook.create_sheet(server)
+        # Write data to the workbook
+        for index in range(len(response)):
+            sheet.cell(row=index + 1, column=1).value = response[index]
         # Save the workbook
         workbook.save("cameras_not_responding.xlsx")
         workbook.close()
@@ -160,12 +156,11 @@ def main():
     # Login to the server
     # connect_to_server(server)
     command = f"""Connect-ManagementServer {server} (Get-Credential) -BasicUser -AcceptEula
-              (Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera
+              (Get-ItemState -CamerasOnly | Where-Object State -ne 'Responding').FQID.ObjectId | Get-VmsCamera | 
+              Select-Object Name
               Disconnect-ManagementServer"""
     result = subprocess.run(["powershell", "-Command", command], capture_output=True, text=True)
-    response_to_xlsx(result.stdout.split(), server)
-    print(result.stdout.split())
-    print(result.stderr)
+    response_to_xlsx(result.stdout.split('\n'), server)
     # close_connection_powershell()
     # for server in IP_SERVERS.values():
     #     try:
@@ -193,7 +188,6 @@ def main():
     #                 pool.close()
     #     except Exception as e:
     #         window_alert(f"An error occurred: {e}")
-
 
 
 if __name__ == '__main__':
