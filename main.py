@@ -144,9 +144,9 @@ def main():
     try:
         # Dictionary with the IP of the servers
         IP_SERVERS = ast.literal_eval(os.getenv("IP_SERVERS"))
+        # Run scritps in the servers
         for server in IP_SERVERS.values():
             command = os.getenv("COMMAND").format(server)
-            # print(type(command))
             result = subprocess.run(["powershell", "-Command", command], capture_output=True, text=True)
             response_to_xlsx(result.stdout.split('\n'), server)
         window_alert("Process finished successfully")
