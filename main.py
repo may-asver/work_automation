@@ -6,6 +6,7 @@
 """
 
 # Import libraries
+import sys
 import ast
 # import socket
 from getpass_asterisk.getpass_asterisk import getpass_asterisk as getpass_
@@ -61,7 +62,7 @@ def create_user():
 def get_password(user):
     """Get the password."""
     # Dictionary with the IP of the servers
-    IP_SERVERS = ast.literal_eval(os.getenv("IP_SERVERS"))
+    IP_SERVERS = ast.literal_eval(os.environ.get("IP_SERVERS"))
     while True:
         print(f"Enter the password for {user}: \n")
         password = getpass_()
@@ -76,8 +77,8 @@ def get_password(user):
 
 def login(user, server):
     """Login to the server."""
-    PORT = os.getenv("PORT")
-    dominio = os.getenv("DOMAIN_2").__add__("\\")
+    PORT = os.environ.get("PORT")
+    dominio = os.environ.get("DOMAIN_2").__add__("\\")
     wsman = WSMan(server, username=user.get_username(), ssl=False,
                   password=user.get_password(), port=PORT, cert_validation=False)
     print(wsman.get_server_config())
@@ -143,10 +144,10 @@ def main():
     """Main function."""
     try:
         # Dictionary with the IP of the servers
-        IP_SERVERS = ast.literal_eval(os.getenv("IP_SERVERS"))
+        IP_SERVERS = ast.literal_eval(os.environ.get("IP_SERVERS"))
         # Run scritps in the servers
         for server in IP_SERVERS.values():
-            command = os.getenv("COMMAND").format(server)
+            command = os.environ.get("COMMAND").format(server)
             result = subprocess.run(["powershell", "-Command", command], capture_output=True, text=True)
             response_to_xlsx(result.stdout.split('\n'), server)
         window_alert("Process finished successfully")
