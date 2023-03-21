@@ -1,5 +1,5 @@
 """
-    Script to automate the process of creating tickets of the cameras which are not responding.
+    Script to automate the process of getting cameras which are not responding.
 
     Author: Maya Aguirre
     Date: 2023-02-02
