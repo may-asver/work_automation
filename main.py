@@ -148,7 +148,10 @@ def main():
         # Run scritps in the servers
         for server in IP_SERVERS.values():
             command = os.environ.get("COMMAND").format(server)
-            result = subprocess.run(["powershell", "-Command", command], capture_output=True, text=True)
+            result = subprocess.run(["powershell", "-Command", command], capture_output=True, encoding="cp437")
+            if result.stderr:
+                window_alert(f"An error occurred: {result.stderr}")
+                break
             response_to_xlsx(result.stdout.split('\n'), server)
         window_alert("Process finished successfully")
     except Exception as e:
