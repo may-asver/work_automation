@@ -146,13 +146,15 @@ def main():
         # Dictionary with the IP of the servers
         IP_SERVERS = ast.literal_eval(os.environ.get("IP_SERVERS"))
         # Run scritps in the servers
-        for server in IP_SERVERS.values():
-            command = os.environ.get("COMMAND").format(server)
+        for server in IP_SERVERS:
+            if server == "GDL-CORONA":
+                command = os.environ.get("COMMAND_CORONA").format(IP_SERVERS[server])
+            else:
+                command = os.environ.get("COMMAND").format(IP_SERVERS[server])
             result = subprocess.run(["powershell", "-Command", command], capture_output=True, encoding="cp437")
             # If there is an error
             if result.stderr:
                 window_alert(f"An error occurred: {result.stderr}")
-                break
             response_to_xlsx(result.stdout.split('\n'), server)
         window_alert("Process finished successfully")
     except Exception as e:
