@@ -113,6 +113,16 @@ def window_alert(message):
     window.close()
 
 
+def clear_response(result):
+    """Clear the response."""
+    result = result.replace(' ', '').split('\n')
+    result.pop(0)
+    result.pop(1)
+    result[0] = 'CAMARAS'
+
+    return result
+
+
 def response_to_xlsx(response, server):
     """Save the response to a xlsx file."""
     try:
@@ -155,7 +165,7 @@ def main():
             # If there is an error
             if result.stderr:
                 window_alert(f"An error occurred: {result.stderr}")
-            response_to_xlsx(result.stdout.split('\n'), server)
+            response_to_xlsx(clear_response(result.stdout), server)
         window_alert("Process finished successfully")
     except Exception as e:
         window_alert(f"An error occurred: {e}")
