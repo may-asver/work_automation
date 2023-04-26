@@ -22,7 +22,7 @@ import openpyxl
 from cryptography.fernet import Fernet
 
 # Load environment variables
-load_dotenv()
+load_dotenv("./.env")
 
 
 class User(object):
