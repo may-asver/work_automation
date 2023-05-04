@@ -141,7 +141,7 @@ def response_to_xlsx(response, server):
                 sheet = workbook.create_sheet(server)
         # Write data to the workbook
         for index in range(len(response)):
-            sheet.cell(row=index + 1, column=1).value = response[index].rstrip()[:-1]
+            sheet.cell(row=index + 1, column=1).value = response[index].rstrip()
         # Save the workbook
         workbook.save("cameras_not_responding.xlsx")
         workbook.close()
