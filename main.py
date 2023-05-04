@@ -115,7 +115,7 @@ def window_alert(message):
 
 def clear_response(result):
     """Clear the response."""
-    result = result.replace(' ', '').split('\n')
+    result = result.split('\n')
     result.pop(0)
     result.pop(1)
     result[0] = 'CAMARAS'
@@ -141,7 +141,7 @@ def response_to_xlsx(response, server):
                 sheet = workbook.create_sheet(server)
         # Write data to the workbook
         for index in range(len(response)):
-            sheet.cell(row=index + 1, column=1).value = response[index]
+            sheet.cell(row=index + 1, column=1).value = response[index].rstrip()[:-1]
         # Save the workbook
         workbook.save("cameras_not_responding.xlsx")
         workbook.close()
