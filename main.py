@@ -115,10 +115,13 @@ def window_alert(message):
 
 def clear_response(result):
     """Clear the response."""
-    result = result.split('\n')
-    result.pop(0)
-    result.pop(1)
-    result[0] = 'CAMARAS'
+    if not result:
+        return result
+    else:
+        result = result.split('\n')
+        result.pop(0)
+        result.pop(1)
+        result[0] = 'CAMARAS'
 
     return result
 
@@ -140,8 +143,11 @@ def response_to_xlsx(response, server):
             else:
                 sheet = workbook.create_sheet(server)
         # Write data to the workbook
-        for index in range(len(response)):
-            sheet.cell(row=index + 1, column=1).value = response[index].rstrip()
+        if not response:
+            sheet.cell(row=1, column=1).value = "No hay cámaras sin funcionar"
+        else:
+            for index in range(len(response)):
+                sheet.cell(row=index + 1, column=1).value = response[index].rstrip()
         # Save the workbook
         workbook.save("cameras_not_responding.xlsx")
         workbook.close()
@@ -163,9 +169,11 @@ def main():
                 command = os.environ.get("COMMAND").format(IP_SERVERS[server])
             result = subprocess.run(["powershell", "-Command", command], capture_output=True, encoding="cp437")
             # If there is an error
-            if result.stderr:
-                window_alert(f"An error occurred: {result.stderr}")
-            response_to_xlsx(clear_response(result.stdout), server)
+            if result.returncode != 0:
+                if "No se puede enlazar el argumento al parámetro 'Hardware' porque es nulo." not in result.stderr:
+                    window_alert(f"An error occurred: {result.stderr}")
+            else:
+                response_to_xlsx(clear_response(result.stdout), server)
         window_alert("Process finished successfully")
     except Exception as e:
         window_alert(f"An error occurred: {e}")
