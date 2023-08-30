@@ -110,7 +110,7 @@ def manage_error(error):
         ruta_script = os.path.join(os.getcwd(), ast.literal_eval(os.environ.get("SCRIPT_INSTALL_MODULE")))
         subprocess.run(["powershell", "-File", ruta_script])
     else:
-        window_alert(f"An error occurred: {error}"
+        window_alert(f"An error occurred: {error}")
 
 
 def window_alert(message):
