@@ -173,7 +173,6 @@ def response_to_xlsx(response, server):
         # Save the workbook
         workbook.save("cameras_not_responding.xlsx")
         workbook.close()
-        window_alert(f"The response for {server} was saved successfully")
     except Exception as e:
         window_alert(f"An error occurred saving the response: {e}")
 
