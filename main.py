@@ -101,15 +101,37 @@ def close_connection_powershell(ps):
         window_alert("Connection closed")
 
 
+def manage_error(error):
+    """Manage the error."""
+    if "No se puede enlazar el argumento al parámetro 'Hardware' porque es nulo." in error:
+        window_alert("The server is not responding")
+    elif "CommandNotFoundException" in error:
+        # Install the module
+        ruta_script = os.path.join(os.getcwd(), ast.literal_eval(os.environ.get("SCRIPT_INSTALL_MODULE")))
+        subprocess.run(["powershell", "-File", ruta_script])
+    else:
+        window_alert(f"An error occurred: {error}")
+
+
 def window_alert(message):
     """Create a window to alert the user."""
-    layout = [[sg.Text(message, size=(50, 4), justification="center")],
-              [sg.Button("Ok", border_width=3, size=(7, 1))]]
-    window = sg.Window("Alert", layout, element_justification="center")
-    while True:
-        event, values = window.read()
-        if event == "Ok" or event == sg.WIN_CLOSED:
-            break
+    # Error message
+    if "error" in message.lower():
+        layout = [[sg.Text(message, size=(50, 4), justification="center")],
+                  [sg.Button("Ok", border_width=3, size=(7, 1))]]
+        window = sg.Window("Alert", layout, element_justification="center")
+        while True:
+            event, values = window.read()
+            if event == "Ok" or event == sg.WIN_CLOSED:
+                break
+    # Success message
+    else:
+        layout = [[sg.Text(message, size=(50, 4), justification="center")]]
+        window = sg.Window("Alert", layout, element_justification="center")
+        while True:
+            event, values = window.read()
+            if event == sg.WIN_CLOSED:
+                break
     window.close()
 
 
@@ -170,8 +192,8 @@ def main():
             result = subprocess.run(["powershell", "-Command", command], capture_output=True, encoding="cp437")
             # If there is an error
             if result.returncode != 0:
-                if "No se puede enlazar el argumento al parámetro 'Hardware' porque es nulo." not in result.stderr:
-                    window_alert(f"An error occurred: {result.stderr}")
+                manage_error(result.stderr)
+            # If there is not an error
             else:
                 response_to_xlsx(clear_response(result.stdout), server)
         window_alert("Process finished successfully")
