@@ -23,92 +23,98 @@ from cryptography.fernet import Fernet
 
 # Load environment variables
 load_dotenv("./.env")
+# Debug mode
+DEBUG = bool(ast.literal_eval(os.environ.get("DEBUG")))
 
 
-class User(object):
-    __key__ = Fernet.generate_key()
-
-    def __init__(self, username: str, password: str):
-        self.username = username
-        User.__encrypt__(self, password)
-
-    def get_username(self):
-        return self.username
-
-    def get_password(self):
-        return User.__decrypt__(self)
-
-    def __encrypt__(self, password):
-        """Encrypt the password."""
-        f = Fernet(User.__key__)
-        self.password = f.encrypt(password.encode("utf-8"))
-
-    def __decrypt__(self):
-        """Decrypt the password."""
-        f = Fernet(User.__key__)
-        return f.decrypt(self.password).decode("utf-8")
-
-
-def create_user():
-    """Create user."""
-    try:
-        passwd = get_password(os.getlogin())
-        user = User(os.getlogin(), passwd)
-        return user
-    except Exception as e:
-        window_alert(f"An error occurred while getting username: {e}")
-
-
-def get_password(user):
-    """Get the password."""
-    # Dictionary with the IP of the servers
-    IP_SERVERS = ast.literal_eval(os.environ.get("IP_SERVERS"))
-    while True:
-        print(f"Enter the password for {user}: \n")
-        password = getpass_()
-        try:
-            session = winrm.Session(IP_SERVERS["C5"], auth=(user, password), transport='ntlm')
-            response = session.run_cmd("ipconfig")
-            if response.status_code == 0:
-                return password
-        except Exception as e:
-            window_alert(f"An error occurred while login: {e}")
-
-
-def login(user, server):
-    """Login to the server."""
-    PORT = os.environ.get("PORT")
-    dominio = os.environ.get("DOMAIN_2").__add__("\\")
-    wsman = WSMan(server, username=user.get_username(), ssl=False,
-                  password=user.get_password(), port=PORT, cert_validation=False)
-    print(wsman.get_server_config())
-    return wsman
-
-
-def connect_to_server(ps, server):
-    """Connect to the server."""
-    ps.add_script(f"Connect-ManagementServer {server} -AcceptEula")
-    ps.add_statement()
-
-
-def close_connection_powershell(ps):
-    """Close the connection to the server."""
-    try:
-        ps.add_script("Disconnect-ManagementServer")
-    except Exception as e:
-        print(f"An error occurred trying close the connection with server: {e}")
-    finally:
-        window_alert("Connection closed")
-
+# class User(object):
+#     __key__ = Fernet.generate_key()
+#
+#     def __init__(self, username: str, password: str):
+#         self.username = username
+#         User.__encrypt__(self, password)
+#
+#     def get_username(self):
+#         return self.username
+#
+#     def get_password(self):
+#         return User.__decrypt__(self)
+#
+#     def __encrypt__(self, password):
+#         """Encrypt the password."""
+#         f = Fernet(User.__key__)
+#         self.password = f.encrypt(password.encode("utf-8"))
+#
+#     def __decrypt__(self):
+#         """Decrypt the password."""
+#         f = Fernet(User.__key__)
+#         return f.decrypt(self.password).decode("utf-8")
+#
+#
+# def create_user():
+#     """Create user."""
+#     try:
+#         passwd = get_password(os.getlogin())
+#         user = User(os.getlogin(), passwd)
+#         return user
+#     except Exception as e:
+#         window_alert(f"An error occurred while getting username: {e}")
+#
+#
+# def get_password(user):
+#     """Get the password."""
+#     # Dictionary with the IP of the servers
+#     IP_SERVERS = ast.literal_eval(os.environ.get("IP_SERVERS"))
+#     while True:
+#         print(f"Enter the password for {user}: \n")
+#         password = getpass_()
+#         try:
+#             session = winrm.Session(IP_SERVERS["C5"], auth=(user, password), transport='ntlm')
+#             response = session.run_cmd("ipconfig")
+#             if response.status_code == 0:
+#                 return password
+#         except Exception as e:
+#             window_alert(f"An error occurred while login: {e}")
+#
+#
+# def login(user, server):
+#     """Login to the server."""
+#     PORT = os.environ.get("PORT")
+#     dominio = os.environ.get("DOMAIN_2").__add__("\\")
+#     wsman = WSMan(server, username=user.get_username(), ssl=False,
+#                   password=user.get_password(), port=PORT, cert_validation=False)
+#     print(wsman.get_server_config())
+#     return wsman
+#
+#
+# def connect_to_server(ps, server):
+#     """Connect to the server."""
+#     ps.add_script(f"Connect-ManagementServer {server} -AcceptEula")
+#     ps.add_statement()
+#
+#
+# def close_connection_powershell(ps):
+#     """Close the connection to the server."""
+#     try:
+#         ps.add_script("Disconnect-ManagementServer")
+#     except Exception as e:
+#         print(f"An error occurred trying close the connection with server: {e}")
+#     finally:
+#         window_alert("Connection closed")
+#
 
 def manage_error(error):
     """Manage the error."""
     if "No se puede enlazar el argumento al parámetro 'Hardware' porque es nulo." in error:
         window_alert("The server is not responding")
     elif "CommandNotFoundException" in error:
-        # Install the module
-        ruta_script = os.path.join(os.getcwd(), ast.literal_eval(os.environ.get("SCRIPT_INSTALL_MODULE")))
-        subprocess.run(["powershell", "-File", ruta_script])
+        try:
+            # Install the module
+            ruta_script = os.path.join(os.getcwd(), str(os.environ.get("SCRIPT_INSTALL_MODULE")))
+            subprocess.run(["powershell", "-File", ruta_script])
+            error = error.replace("CommandNotFoundException", "CommandNotFoundException -ErrorAction Stop")
+        except Exception as e:
+            window_alert(f"An error occurred while installing the module: {e}")
     else:
         window_alert(f"An error occurred: {error}")
 
@@ -129,8 +135,8 @@ def window_alert(message):
         layout = [[sg.Text(message, size=(50, 4), justification="center")]]
         window = sg.Window("Alert", layout, element_justification="center")
         while True:
-            event, values = window.read()
-            if event == sg.WIN_CLOSED:
+            event, values = window.read(timeout=5000)
+            if event == sg.WIN_CLOSED or event == sg.TIMEOUT_KEY:
                 break
     window.close()
 
@@ -169,6 +175,8 @@ def response_to_xlsx(response, server):
             sheet.cell(row=1, column=1).value = "No hay cámaras sin funcionar"
         else:
             for index in range(len(response)):
+                if DEBUG:
+                    print(response[index])
                 sheet.cell(row=index + 1, column=1).value = response[index].rstrip()
         # Save the workbook
         workbook.save("cameras_not_responding.xlsx")
