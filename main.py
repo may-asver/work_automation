@@ -16,6 +16,8 @@ import sys
 
 
 def resource_path(relative_path):
+    """Get the path of the resource.
+       PyInstaller creates a temp folder and stores path in _MEIPASS"""
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
