@@ -6,24 +6,19 @@
 """
 
 # Import libraries
-import sys
 import ast
-# import socket
-from getpass_asterisk.getpass_asterisk import getpass_asterisk as getpass_
-from pypsrp.wsman import WSMan
-# from socket import gethostname
-import winrm
 import subprocess
-# from pypsrp.powershell import PowerShell, RunspacePool
 import os
 from dotenv import load_dotenv
-import PySimpleGUI as sg
+import PySimpleGUI as Sg
 import openpyxl
-from cryptography.fernet import Fernet
+import sys
 
-# Load environment variables
-load_dotenv("./.env")
-DEBUG = bool(ast.literal_eval(os.environ.get("DEBUG")))
+
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
 
 def manage_error(error):
@@ -32,7 +27,7 @@ def manage_error(error):
         window_alert("The server is not responding")
     elif "CommandNotFoundException" in error:
         # Install the module
-        ruta_script = os.path.join(os.getcwd(), str(os.environ.get("SCRIPT_INSTALL_MODULE")))
+        ruta_script = resource_path(str(os.environ.get("SCRIPT_INSTALL_MODULE")))
         subprocess.run(["powershell", "-File", ruta_script])
     else:
         window_alert(f"An error occurred: {error}")
@@ -42,20 +37,20 @@ def window_alert(message):
     """Create a window to alert the user."""
     # Error message
     if "error" in message.lower():
-        layout = [[sg.Text(message, size=(50, 4), justification="center")],
-                  [sg.Button("Ok", border_width=3, size=(7, 1))]]
-        window = sg.Window("Alert", layout, element_justification="center")
+        layout = [[Sg.Text(message, size=(50, 4), justification="center")],
+                  [Sg.Button("Ok", border_width=3, size=(7, 1))]]
+        window = Sg.Window("Alert", layout, element_justification="center")
         while True:
             event, values = window.read()
-            if event == "Ok" or event == sg.WIN_CLOSED:
+            if event == "Ok" or event == Sg.WIN_CLOSED:
                 break
     # Success message
     else:
-        layout = [[sg.Text(message, size=(50, 4), justification="center")]]
-        window = sg.Window("Alert", layout, element_justification="center")
+        layout = [[Sg.Text(message, size=(50, 4), justification="center")]]
+        window = Sg.Window("Alert", layout, element_justification="center")
         while True:
             event, values = window.read(timeout=5000)
-            if event == sg.WIN_CLOSED or event == sg.TIMEOUT_KEY:
+            if event == Sg.WIN_CLOSED or event == Sg.TIMEOUT_KEY:
                 break
     window.close()
 
@@ -94,8 +89,6 @@ def response_to_xlsx(response, server):
             sheet.cell(row=1, column=1).value = "No hay cámaras sin funcionar"
         else:
             for index in range(len(response)):
-                if DEBUG:
-                    print(response[index])
                 sheet.cell(row=index + 1, column=1).value = response[index].rstrip()
         # Save the workbook
         workbook.save("cameras_not_responding.xlsx")
@@ -107,6 +100,8 @@ def response_to_xlsx(response, server):
 def main():
     """Main function."""
     try:
+        # Load the environment variables
+        load_env()
         # Dictionary with the IP of the servers
         IP_SERVERS = ast.literal_eval(os.environ.get("IP_SERVERS"))
         # Run scritps in the servers
@@ -125,6 +120,15 @@ def main():
         window_alert("Process finished successfully")
     except Exception as e:
         window_alert(f"An error occurred: {e}")
+
+
+def load_env():
+    """Load the environment variables."""
+    try:
+        load_dotenv(resource_path("./resources/.env"))
+    except Exception as error:
+        window_alert(f"An error occurred loading the environment variables: {error}")
+        sys.exit()
 
 
 if __name__ == '__main__':
