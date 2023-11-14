@@ -24,26 +24,6 @@ def resource_path(relative_path):
     return os.path.join(os.path.abspath("."), relative_path)
 
 
-def clear_tmp():
-    """Clear the tmp folder."""
-    # Obtener la ruta de la carpeta temporal
-    carpeta_temporal = resource_path("")
-
-    try:
-        # Iterar sobre los archivos en la carpeta temporal y eliminarlos
-        for nombre_archivo in os.listdir(carpeta_temporal):
-            ruta_archivo = os.path.join(carpeta_temporal, nombre_archivo)
-            try:
-                if os.path.isfile(ruta_archivo):
-                    os.unlink(ruta_archivo)
-                elif os.path.isdir(ruta_archivo):
-                    shutil.rmtree(ruta_archivo)
-            except Exception as e:
-                window_alert(f"No se pudo eliminar {ruta_archivo}: {e}")
-    except Exception as e:
-        window_alert(f"Error al limpiar la carpeta temporal: {e}")
-
-
 def manage_error(error):
     """Manage the error."""
     if "No se puede enlazar el argumento al parámetro 'Hardware' porque es nulo." in error:
@@ -143,8 +123,6 @@ def main():
         window_alert("Process finished successfully")
     except Exception as e:
         window_alert(f"An error occurred: {e}")
-    finally:
-        clear_tmp()
 
 
 def load_env():
