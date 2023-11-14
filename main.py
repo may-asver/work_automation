@@ -13,7 +13,6 @@ from dotenv import load_dotenv
 import PySimpleGUI as Sg
 import openpyxl
 import sys
-import shutil
 
 
 def resource_path(relative_path):
