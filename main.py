@@ -39,7 +39,7 @@ def window_alert(message):
     """Create a window to alert the user."""
     # Error message
     if "error" in message.lower():
-        layout = [[Sg.Text(message, size=(50, 4), justification="center")],
+        layout = [[Sg.Text(message, size=(50, 15), justification="center")],
                   [Sg.Button("Ok", border_width=3, size=(7, 1))]]
         window = Sg.Window("Alert", layout, element_justification="center")
         while True:
