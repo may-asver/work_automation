@@ -1,21 +1,22 @@
 <# Script to add a list of users to a role in Milestone from a CSV file.
-#  Input: IP address of the server, CSV file with the list of users
-#  Output: Message of success
-#  Requirements: PowerShell, MilestonePSTools module v23.2.3
-#  Usage: ./add_users.ps1 <IP address>
-#  CSV file format: "NombreUsuarioAD";"NombreRolMilestone"
-#
-#  Author: Maya Aguirre
-#  Date: 2023-12-07
+  Input: IP address of the server, CSV file with the list of users
+  Output: Message of success
+  Requirements: PowerShell, MilestonePSTools module v23.2.3
+  It should be run with Administrator privileges and from the Milestone Server.
+  Usage: ./add_users.ps1
+  CSV file format: "NombreUsuarioAD";"NombreRolMilestone"
+
+  Author: Maya Aguirre
+  Date: 2023-12-07
 #>
 
 
-# Import the required modules
-Import-Module ActiveDirectory
-Import-Module Milestone
-
-# Get input for IP address
-$ip = Read-Host "Enter the server IP address"
+# Validate if exists the module ActiveDirectory
+if ($null -eq  (Get-Module -ListAvailable -Name ActiveDirectory))
+{
+    # Install the module ActiveDirectory
+    Add-WindowsFeature RSAT-AD-PowerShell
+}
 
 function Select-File
 {
@@ -36,55 +37,53 @@ function Select-File
     }
     return $null
 }
-
-# Validate IP address
-if ($ip -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$')
+try
 {
-    try
+    # Import the CSV file
+    Write-Host "Select the CSV file"
+    $path = Invoke-Command -ScriptBlock ${function:Select-File}
+    if ($null -eq $path)
     {
-        # Import the CSV file
-        Write-Host "Select the CSV file"
-        $path = Invoke-Command -ScriptBlock ${function:Select-File}
-        if ($null -eq $path)
+        Write-Host "No file selected"
+        exit
+    }
+    $csv = Import-Csv -Path $path -Delimiter ";" -Encoding "UTF8"
+    # Add each user to the role from the CSV file
+    foreach ($row in $csv)
+    {
+        $usuarioAD = $row.NombreUsuarioAD
+        Write-Host "Adding user '$usuarioAD'"
+        $rolMilestone = $row.NombreRolMilestone
+        # Obtener el objeto de usuario de AD
+        $usuarioADObj = Get-ADUser -Identity $usuarioAD | Select-Object UserPrincipalName -ErrorAction Stop
+        # Verificar si el usuario de AD existe
+        if ($usuarioADObj)
         {
-            Write-Host "No file selected"
-            exit
-        }
-        $csv = Import-Csv -Path $path -Delimiter ";" -Encoding "UTF8"
-        # Connect to the server
-        Write-Host "Connecting to server" $ip
-        Connect-ManagementServer $ip
-        # Add each user to the role from the CSV file
-        foreach ($row in $csv)
-        {
-            $usuarioAD = $row.NombreUsuarioAD
-            $rolMilestone = $row.NombreRolMilestone
-            # Obtener el objeto de usuario de AD
-            $usuarioADObj = Get-ADUser -Identity $usuarioAD
-            # Verificar si el usuario de AD existe
-            if ($usuarioADObj) {
-                # Obtener el objeto de rol en Milestone
-                $rolMilestoneObj = Get-VmsRole -Name $rolMilestone
-                # Verificar si el rol en Milestone existe
-                if ($rolMilestoneObj) {
-                    # Agregar el usuario al rol en Milestone
-                    Add-VmsRoleMember -AccountName $usuarioADObj -Role $rolMilestoneObj
-                    Write-Host "The user '$usuarioAD' was added to the role '$rolMilestone' in the server"
-                } else {
-                    Write-Host "Error: The role '$rolMilestone' was not found in the server"
-                }
-            } else {
-                Write-Host "Error: The AD user '$usuarioAD' was not found"
+            # Obtener el objeto de rol en Milestone
+            $rolMilestoneObj = Get-VmsRole -Name $rolMilestone
+            # Verificar si el rol en Milestone existe
+            if ($rolMilestoneObj)
+            {
+                # Agregar el usuario al rol en Milestone
+                Add-VmsRoleMember -AccountName $usuarioADObj.UserPrincipalName -Role $rolMilestoneObj
+                Write-Host "The user '$usuarioAD' was added to the role '$rolMilestone' in the server"
+            }
+            else
+            {
+                Write-Host "Error: The role '$rolMilestone' was not found in the server"
             }
         }
-        Write-Host "Done"
+        else
+        {
+            Write-Host "Error: The AD user '$usuarioAD' was not found"
+        }
     }
-    catch
-    {
-        Write-Host "Error: $_"
-    }
+    # Disable the RSAT-AD-PowerShell feature
+    Remove-WindowsFeature -Name RSAT-AD-PowerShell
+    # Finish the script
+    Write-Host "Done"
 }
-else
+catch
 {
-    Write-Host "Error: Invalid IP address"
+    Write-Host "Error: $_"
 }
