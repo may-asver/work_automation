@@ -102,7 +102,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-resources/.env
+camaras_not responding/resources/.env
 .venv
 env/
 venv/
@@ -111,6 +111,7 @@ env.bak/
 venv.bak/
 *.csv
 .idea/
+
 
 # Spyder project settings
 .spyderproject
