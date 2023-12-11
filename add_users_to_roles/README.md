@@ -6,12 +6,10 @@ The CSV file must have the following format:  <br />
 ```"username";"role"```: the following lines are the users with its role.  <br />
 
 Example:  <br />
-``
-"NombreUsuarioAD";"NombreRolMilestone"
-"username1";"role1"
-"username2";"role2"
-"username3";"role3"
-``  <br />
+```"NombreUsuarioAD";"NombreRolMilestone"``` <br />
+```"username1";"role1"``` <br />
+```"username2";"role2"``` <br />
+```"username3";"role3"``` <br />
 
 ## Requirements
 - PowerShell 3.0 or higher
