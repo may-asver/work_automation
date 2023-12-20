@@ -17,6 +17,7 @@ Example:  <br />
 <br />
 Where the first line is the header of the CSV file.  <br />
 The following lines are the cameras to add <br />
+**The delimiter should be a comma (,)**  <br />
 
 ## How to use
 1. Download the script
