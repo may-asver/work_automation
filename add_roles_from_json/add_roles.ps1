@@ -16,6 +16,9 @@
 # Function to select folder to save .json file
 function Select-Folder
 {
+    param (
+        [string]$Section
+    )
     Add-Type -AssemblyName System.Windows.Forms
     # Create a folder browser dialog
     $folderBrowser = New-Object System.Windows.Forms.FolderBrowserDialog
@@ -26,9 +29,20 @@ function Select-Folder
     {
         # Get the selected folder path
         $selectedFolderPath = $folderBrowser.SelectedPath
-
-        $jsonFilePath = Join-Path -Path $selectedFolderPath -ChildPath "exported_roles.json"
-
+        switch ($section) {
+            "roles" {
+                $jsonFilePath = Join-Path -Path $selectedFolderPath -ChildPath "exported_roles.json"
+                break
+            }
+            "vmsprofiles" {
+                $jsonFilePath = Join-Path -Path $selectedFolderPath -ChildPath "exported_vmsprofiles.json"
+                break
+            }
+            Default {
+                $jsonFilePath = Join-Path -Path $selectedFolderPath -ChildPath "exported_info.json"
+                break
+            }
+        }
         return $jsonFilePath
     }
     else
@@ -75,19 +89,24 @@ try
     $ip_export = Read-Host "IP del servidor para exportar roles: "
     $ip_import = Read-Host "IP del servidor para importar roles: "
     #  Check if the input is a valid IP address
-    if ( !({Test-IPAddress $ip_export} -and {Test-IPAddress $ip_import}) )
+    if ( !({Test-IPAddress $ip_export}) -and !({Test-IPAddress $ip_import}) )
     {
         # Call the function to select folder to save .json file
-        $path = Select-Folder
+        $path_roles = Select-Folder -Section "roles"
         # Connect to the Milestone Server to export roles
         Connect-ManagementServer $ip_export
         # Call the function to export roles from the Milestone Server
-        Export-VmsRole -Path $path
+        Export-VmsRole -Path $path_roles
+        # Export vms profiles
+        $path_profiles = Select-Folder -Section "vmsprofiles"
+        Export-VmsClientProfile -Path $path_profiles
         # Disconnect from the Milestone Server
         Disconnect-ManagementServer
         # Import roles from the .json file to the Milestone Server
         Connect-ManagementServer $ip_import
-        Import-VmsRole -Path $path -Force
+        Import-VmsRole -Path $path_roles -Force
+        # Import vms profiles from the .json file to the Milestone Server
+        Import-VmsClientProfile -Path $path_profiles -Force
         # Disconnect from the Milestone Server
         Disconnect-ManagementServer
     }
