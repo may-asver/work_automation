@@ -1,8 +1,11 @@
-<# Script to add a list of roles exported from a Milestone Server in a .json file
+<# Script to import roles to a Milestone Server from a .json file
   Input: IP address of the server to get roles, IP address of the server to create the roles.
   Output: Message of success
   Requirements: PowerShell, MilestonePSTools module v23.2.3
-  It should be run with an user with Administrator privileges from the Milestone Server.
+
+  It should be run with an user with Administrator privileges into the Milestone Server where you want to import
+  the roles.
+
   Usage: ./add_roles.ps1
 
   Author: Maya Aguirre
@@ -14,7 +17,6 @@
 function Select-Folder
 {
     Add-Type -AssemblyName System.Windows.Forms
-
     # Create a folder browser dialog
     $folderBrowser = New-Object System.Windows.Forms.FolderBrowserDialog
     $folderBrowser.Description = "Select a folder to save the JSON file"
@@ -51,7 +53,7 @@ function Test-IPAddress
 
         foreach ( $octet in $octets )
         {
-            if ( $octet -lt 0 -or $octet -gt 255 )
+            if ( $octet -gt 255 )
             {
                 $isValid = $false
                 break
@@ -60,12 +62,10 @@ function Test-IPAddress
 
         if ( $isValid )
         {
-            Write-Host "$IPAddress is a valid IP address."
             return $true
         }
     }
 
-    Write-Host "$IPAddress is NOT a valid IP address."
     return $false
 }
 
@@ -74,21 +74,25 @@ try
     # Get input for IP address server to export roles from
     $ip_export = Read-Host "IP del servidor para exportar roles: "
     $ip_import = Read-Host "IP del servidor para importar roles: "
-    #  Check if the input is a valid IP address with a single IF statement
-    if ( Test-IPAddress $ip_export -and Test-IPAddress $ip_import )
+    #  Check if the input is a valid IP address
+    if ( !({Test-IPAddress $ip_export} -and {Test-IPAddress $ip_import}) )
     {
         # Call the function to select folder to save .json file
         $path = Select-Folder
         # Connect to the Milestone Server to export roles
-        Connect-ManagementServer -IPAddress $ip_export
+        Connect-ManagementServer $ip_export
         # Call the function to export roles from the Milestone Server
         Export-VmsRole -Path $path
         # Disconnect from the Milestone Server
         Disconnect-ManagementServer
-
+        # Import roles from the .json file to the Milestone Server
+        Connect-ManagementServer $ip_import
+        Import-VmsRole -Path $path -Force
+        # Disconnect from the Milestone Server
+        Disconnect-ManagementServer
     }
 }
 catch
 {
-    Write-Host "An error occurred."
+    Write-Host "An error occurred. $_"
 }
