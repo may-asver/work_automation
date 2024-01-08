@@ -112,6 +112,7 @@ env.bak/
 venv.bak/
 *.csv
 change_camera_name/csv-test/
+*.json
 
 
 # Spyder project settings
