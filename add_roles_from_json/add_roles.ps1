@@ -17,33 +17,48 @@
 function Select-Folder
 {
     param (
-        [string]$Section
+        [string] $Section
     )
+
     Add-Type -AssemblyName System.Windows.Forms
     # Create a folder browser dialog
     $folderBrowser = New-Object System.Windows.Forms.FolderBrowserDialog
-    $folderBrowser.Description = "Select a folder to save the JSON file"
-
+    switch ( $Section )
+    {
+        roles {
+            $folderBrowser.Description = "Select a folder to save the JSON file for roles"
+            break
+        }
+        vmsprofiles {
+            $folderBrowser.Description = "Select a folder to save the JSON file for profiles"
+            break
+        }
+        Default {
+            $folderBrowser.Description = "Select a folder to save the JSON file"
+            break
+        }
+    }
     # Show the dialog and check if the user clicked OK
-    if ($folderBrowser.ShowDialog() -eq 'OK')
+    if ( $folderBrowser.ShowDialog( ) -eq 'OK' )
     {
         # Get the selected folder path
         $selectedFolderPath = $folderBrowser.SelectedPath
-        switch ($section) {
-            "roles" {
+        switch ( $Section )
+        {
+            roles {
                 $jsonFilePath = Join-Path -Path $selectedFolderPath -ChildPath "exported_roles.json"
-                break
+                return $jsonFilePath
             }
-            "vmsprofiles" {
+            vmsprofiles {
                 $jsonFilePath = Join-Path -Path $selectedFolderPath -ChildPath "exported_vmsprofiles.json"
-                break
+                return $jsonFilePath
             }
             Default {
                 $jsonFilePath = Join-Path -Path $selectedFolderPath -ChildPath "exported_info.json"
-                break
+                return $jsonFilePath
             }
         }
-        return $jsonFilePath
+
     }
     else
     {
@@ -58,26 +73,11 @@ function Test-IPAddress
         [ string ]$IPAddress
     )
 
-    $ipRegex = '^(\d{1,3}\.){3}\d{1,3}$'
+    $ipRegex = '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'
 
     if ( $IPAddress -match $ipRegex )
     {
-        $octets = $IPAddress -split '\.'
-        $isValid = $true
-
-        foreach ( $octet in $octets )
-        {
-            if ( $octet -gt 255 )
-            {
-                $isValid = $false
-                break
-            }
-        }
-
-        if ( $isValid )
-        {
-            return $true
-        }
+         return $true
     }
 
     return $false
@@ -86,19 +86,19 @@ function Test-IPAddress
 try
 {
     # Get input for IP address server to export roles from
-    $ip_export = Read-Host "IP del servidor para exportar roles: "
-    $ip_import = Read-Host "IP del servidor para importar roles: "
+    $ip_export = Read-Host "IP del servidor para exportar roles"
+    $ip_import = Read-Host "IP del servidor para importar roles"
     #  Check if the input is a valid IP address
-    if ( !({Test-IPAddress $ip_export}) -and !({Test-IPAddress $ip_import}) )
+    if ( ({Test-IPAddress $ip_export}) -and ({Test-IPAddress $ip_import}) )
     {
-        # Call the function to select folder to save .json file
-        $path_roles = Select-Folder -Section "roles"
+        # Call the function to select folder to save .json files
+        $path_roles = Select-Folder "roles"
+        $path_profiles = Select-Folder "vmsprofiles"
         # Connect to the Milestone Server to export roles
         Connect-ManagementServer $ip_export
         # Call the function to export roles from the Milestone Server
         Export-VmsRole -Path $path_roles
         # Export vms profiles
-        $path_profiles = Select-Folder -Section "vmsprofiles"
         Export-VmsClientProfile -Path $path_profiles
         # Disconnect from the Milestone Server
         Disconnect-ManagementServer
