@@ -104,9 +104,9 @@ try
         Disconnect-ManagementServer
         # Import roles from the .json file to the Milestone Server
         Connect-ManagementServer $ip_import
-        Import-VmsRole -Path $path_roles -Force
-        # Import vms profiles from the .json file to the Milestone Server
-        Import-VmsClientProfile -Path $path_profiles -Force
+        Import-VmsClientProfile -Path $path_profiles -Force # Import profiles
+        Import-VmsRole -Path $path_roles -Force # Import roles
+
         # Disconnect from the Milestone Server
         Disconnect-ManagementServer
     }
