@@ -9,12 +9,12 @@ Script to automate the process of changing camera HardwareName from Milestone Se
 
 The CSV file that lists the cameras to change its name needs to include the HardwareId and the new HardwareName.  <br />  <br />
 Example:  <br />
-```"HardwareId";"HardwareName"``` <br />
+```"HardwareName";"NewHardwareName"``` <br />
 ```"sg561-0ghb";"Camera 1"``` <br />
 ```"sg561-0ghk";"Camera 2"``` <br />
 ```"sg561-0gui";"Camera 3"``` <br />
 <br />
-Where ```"HardwareId";"HardwareName"``` is the header of the CSV file.  <br />
+Where ```"HardwareName";"NewHardwareName"``` is the header of the CSV file.  <br />
 The following lines are the cameras to change its name.  <br />
 
 ## How to use
