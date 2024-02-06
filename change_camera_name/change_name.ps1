@@ -49,14 +49,14 @@ if ($ip -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$')
         # Change the name of each camera from the CSV file
         foreach ($row in $csv)
         {
-            $camera = Get-Hardware -HardwareId $row.HardwareId
+            $camera = Get-Hardware -Name $row.HardwareName
             if ($null -eq $camera)
             {
-                Write-Host "Camera" $row.HardwareId "not found"
+                Write-Host "Camera" $row.HardwareName "not found"
                 exit
             }
-            Write-Host "Changing name of camera" $camera.Name "to" $row.HardwareName
-            Set-VmsHardware -Hardware $camera -Name $row.HardwareName -EV error
+            Write-Host "Changing hardware name of camera" $camera.Name "to" $row.HardwareName
+            Set-VmsHardware -Hardware $camera -Name $row.NewHardwareName -EV error
         }
         Write-Host "Done"
         # Disconnect from the server
