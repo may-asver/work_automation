@@ -27,15 +27,15 @@ function Select-Folder
     {
         roles {
             $folderBrowser.Description = "Select a folder to save the JSON file for roles"
-            break
+
         }
         vmsprofiles {
             $folderBrowser.Description = "Select a folder to save the JSON file for profiles"
-            break
+
         }
-        Default {
+        default {
             $folderBrowser.Description = "Select a folder to save the JSON file"
-            break
+
         }
     }
     # Show the dialog and check if the user clicked OK
