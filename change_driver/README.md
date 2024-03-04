@@ -3,6 +3,7 @@ Script to change driver id to a cameras from a CSV file.  <br />
 
 ## Requirements
 - Powershell module: MilestonePSTools version 23.2.3
+- Milestone Management v.23.1 or later
 - User with admin permissions in the server
 - CSV file with the HardwareName and DriverNumber of new each camera  <br />
 
