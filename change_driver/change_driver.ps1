@@ -36,7 +36,6 @@ if ($ip -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$')
 {
     try
     {
-        $driverID = Read-Host "Enter the driver ID"
         # Import the CSV file
         Write-Host "Select the CSV file"
         $path = Invoke-Command -ScriptBlock ${function:Select-File}
@@ -60,7 +59,7 @@ if ($ip -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$')
                 exit
             }
             Write-Host "Changing driver name of camera '$camera.Name'"
-            Set-VmsHardwareDriver -Driver $driverID
+            Set-VmsHardwareDriver -Driver $camera.DriverNumber
         }
 
         Write-Host "Done"
