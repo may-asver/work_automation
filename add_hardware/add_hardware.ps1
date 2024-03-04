@@ -61,6 +61,9 @@ if ($ip -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$')
         if ($error -match "ServerNotFound") {
             Write-Host "Server with IP '$ip' not exists"
         }
+        else if ($error -match "The hardware is already defined") {
+            Write-Host "Some Hardware already exists. Verify the list."
+        }
     }
 
 } else {
