@@ -44,25 +44,13 @@ if ($ip -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$')
             Write-Host "No file selected"
             exit
         }
-        #$csv = Import-Csv -Path $path -Delimiter ";" -Encoding "UTF8"
+        #$csv = Import-Csv -Path $path -Delimiter "," -Encoding "UTF8"
         # Connect to the server
         Write-Host "Connecting to server" $ip
-        Connect-ManagementServer $ip (Get-Credential)
+        Connect-ManagementServer $ip
         # Add the cameras to the recording server
         $newHardware = Import-VmsHardware -Path $path
-        foreach ($hardware in $newHardware)
-        {
-            [pscustomobject]@{
-                Name = $hardware.CameraName
-                HardwareName = $hardware.HardwareName
-                Id = $hardware.DriverNumber
-                Address = $hardware.Address
-                Group = $hardware.CameraGroup
-                Username = $hardware.Username
-                Password = $hardware.Password
-                RecordingServer = $hardware.RecordingServer
-            }
-        }
+
         Write-Host "Done"
         # Disconnect from the server
         Disconnect-ManagementServer
@@ -70,6 +58,9 @@ if ($ip -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$')
     catch
     {
         Write-Host "Error:" $error
+        if ($error -match "ServerNotFound") {
+            Write-Host "Server with IP '$ip' not exists"
+        }
     }
 
 } else {
