@@ -6,9 +6,6 @@ $protocol = [Net.SecurityProtocolType]::SystemDefault
 } | Foreach-Object { $protocol = $protocol -bor [Net.SecurityProtocolType]::$_ }
 [Net.ServicePointManager]::SecurityProtocol = $protocol
 
-Write-Host 'Setting Execution Policy to RemoteSigned' -ForegroundColor Green
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Confirm:$false -Force -ErrorAction SilentlyContinue
-
 if ($null -eq (Get-PackageSource -Name NuGet -ErrorAction Ignore)) {
     Write-Host 'Registering NuGet package source' -ForegroundColor Green
     $null = Register-PackageSource -Name NuGet -Location https://www.nuget.org/api/v2 -ProviderName NuGet -Trusted -Force
@@ -27,4 +24,6 @@ if ($null -eq (Get-Module -ListAvailable PowerShellGet | Where-Object Version -g
 }
 
 Write-Host 'Installing MilestonePSTools' -ForegroundColor Green
-Install-Module MilestonePSTools -RequiredVersion 22.3.0 -Scope CurrentUser -Force -ErrorAction Stop -SkipPublisherCheck -AllowClobber
+Install-Module MilestonePSTools -RequiredVersion 23.3.1 -Scope CurrentUser -Force -ErrorAction Stop -SkipPublisherCheck -AllowClobber
+Import-Module 'MilestonePSTools'
+Write-Host 'Installing Module done'
