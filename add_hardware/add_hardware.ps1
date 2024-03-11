@@ -44,7 +44,6 @@ if ($ip -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$')
             Write-Host "No file selected"
             exit
         }
-        #$csv = Import-Csv -Path $path -Delimiter "," -Encoding "UTF8"
         # Connect to the server
         Write-Host "Connecting to server" $ip
         Connect-ManagementServer $ip
@@ -59,9 +58,9 @@ if ($ip -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$')
     {
         Write-Host "Error:" $error
         if ($error -match "ServerNotFound") {
-            Write-Host "Server with IP '$ip' not exists"
+            Write-Host "Server with IP '$ip' not exists or server unreachable"
         }
-        else if ($error -match "The hardware is already defined") {
+        elif ($error -match "The hardware is already defined") {
             Write-Host "Some Hardware already exists. Verify the list."
         }
     }
