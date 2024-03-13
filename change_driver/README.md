@@ -1,4 +1,4 @@
-# Change Driver ID
+# Change driver
 Script to change driver id to a cameras from a CSV file.  <br />
 
 ## Requirements
@@ -9,6 +9,14 @@ Script to change driver id to a cameras from a CSV file.  <br />
 
 **NOTE:** DriverNumber is given in https://www.milestonesys.com/support/software/supported-devices/ doing a search by model.  <br />
 
+## How to use
+1. Download the script
+2. Run the script from PowerShell
+3. Enter the Milestone Server IP address where the recording servers are located
+4. Select CSV file
+5. Wait until the script finishes
+
+## Description
 The CSV file that lists the cameras to change its driver id needs to include the HardwareName and the new ID.  <br />  <br />
 Example:  <br />
 ```"HardwareName","DriverNumber"``` <br />
@@ -19,11 +27,3 @@ Example:  <br />
 Where the first line is the header of the CSV file.  <br />
 The following lines are the cameras to update <br />
 **The delimiter should be a comma (,)**  <br />
-
-## How to use
-1. Download the script
-2. Run the script from PowerShell
-3. Enter the Milestone Server IP address
-4. Select CSV file
-5. Wait until the script finishes
-
