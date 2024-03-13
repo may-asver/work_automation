@@ -140,3 +140,4 @@ cameras_not_responding.xlsx
 .idea/modules.xml
 .idea/vcs.xml
 .idea/.git.iml
+*.txt
