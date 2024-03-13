@@ -1,5 +1,5 @@
 # Change Name
-Scripts to automate the process of changing HardwareName or CameraName from Milestone Server of a camera's list.  <br />
+Scripts to automate the process of changing HardwareName or CameraName from Milestone Server of a camera's list in a CSV file.  <br />
 
 ## Requirements
 - Powershell module: MilestonePSTools version 23.2.3
