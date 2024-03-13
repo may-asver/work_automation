@@ -10,7 +10,7 @@ Script to move a cameras list in a CSV file to another recording server.  <br />
 ## How to use
 1. Download the script
 2. Run the script from PowerShell
-3. Enter the Milestone Server IP address to add users
+3. Enter the Milestone Server IP address to move cameras
 4. Select CSV file
 5. Wait until the script finishes
 
