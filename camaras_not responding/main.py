@@ -15,7 +15,7 @@ import openpyxl
 import sys
 
 
-def resource_path(relative_path):
+def resource_path(relative_path: str):
     """Get the path of the resource.
        PyInstaller creates a temp folder and stores path in _MEIPASS"""
     if hasattr(sys, '_MEIPASS'):
@@ -23,20 +23,60 @@ def resource_path(relative_path):
     return os.path.join(os.path.abspath("."), relative_path)
 
 
-def manage_error(error):
-    """Manage the error."""
+def manage_error(error: str):
+    """Manage common errors while running the script."""
     if "No se puede enlazar el argumento al parámetro 'Hardware' porque es nulo." in error:
         window_alert("The server is not responding")
-    elif "CommandNotFoundException" in error:
-        # Install the module
-        ruta_script = resource_path(str(os.environ.get("SCRIPT_INSTALL_MODULE")))
-        subprocess.run(["powershell", "-File", ruta_script])
+    elif error.find("ejecución de scripts está deshabilitada") > 0:
+        command = os.environ.get("SET_POLICY")
+        # Set policy to run script
+        result_policy = subprocess.run(["powershell", "-Command", command], capture_output=True,
+                                       encoding='cp437')
+        if result_policy.stderr != '':
+            manage_error(result_policy.stderr)
     else:
-        window_alert(f"An error occurred: {error}")
+        window_alert(error)
 
 
-def window_alert(message):
-    """Create a window to alert the user."""
+def install_module():
+    """
+        Function to install MilestonePSTools PowerShell module if not exists in the device
+        Gets the path from the .env, then tries to run the script, if it gets an error, call the function manage_error()
+        Once it finished to set the policy, runs again the script to install the module.
+    """
+    try:
+        # Install the module
+        print('Installing module')
+        ruta_script = resource_path(os.environ.get("SCRIPT_INSTALL_MODULE"))
+        result = subprocess.run(["powershell", "-File", ruta_script], capture_output=True, encoding='cp437')
+        # If it gets error
+        if result.stderr != '':
+            manage_error(result.stderr)
+        subprocess.run(["powershell", "-File", ruta_script])
+    except Exception as error:
+        window_alert(f'An error occurred during installing module: {error}')
+        return -1
+
+
+def validate_module():
+    """
+        Validates if the module MilestonePSTools is installed in the current machine with a PowerShell command written
+        in the .env file.
+        If in not installed, call the function install_module()
+    """
+    try:
+        print('Validating module')
+        command = os.environ.get("VALIDATE_MODULE")
+        result = subprocess.run(["powershell", "-Command", command], capture_output=True)
+        if result.stdout == b'':
+            install_module()
+    except Exception as error:
+        window_alert(f'An error occurred during validating module: {error}')
+        return -1
+
+
+def window_alert(message: str):
+    """Create a window to alert the user from an error or the process is finished."""
     # Error message
     if "error" in message.lower():
         layout = [[Sg.Text(message, size=(50, 15), justification="center")],
@@ -46,6 +86,7 @@ def window_alert(message):
             event, values = window.read()
             if event == "Ok" or event == Sg.WIN_CLOSED:
                 break
+        return -1
     # Success message
     else:
         layout = [[Sg.Text(message, size=(50, 4), justification="center")]]
@@ -57,8 +98,8 @@ def window_alert(message):
     window.close()
 
 
-def clear_response(result):
-    """Clear the response."""
+def clear_response(result: str):
+    """Clear the response and set the header."""
     if not result:
         return result
     else:
@@ -66,12 +107,15 @@ def clear_response(result):
         result.pop(0)
         result.pop(1)
         result[0] = 'CAMARAS'
-
     return result
 
 
-def response_to_xlsx(response, server):
-    """Save the response to a xlsx file."""
+def response_to_xlsx(response: str, server: str):
+    """
+        Save the response to a xlsx file.
+        First validate if the file exists, if not create it, if it exists, open it and select the sheet.
+        Then write the data to the sheet. Finally, save the workbook.
+    """
     try:
         if not os.path.exists("cameras_not_responding.xlsx"):
             # Create a workbook
@@ -96,16 +140,19 @@ def response_to_xlsx(response, server):
         workbook.save("cameras_not_responding.xlsx")
         workbook.close()
     except Exception as e:
-        window_alert(f"An error occurred saving the response: {e}")
+        window_alert(f'An error occurred saving the response: {e}')
+        return -1
 
 
 def main():
-    """Main function."""
+    """Main processes to get the cameras with state: Not Responding"""
     try:
         # Load the environment variables
         load_env()
+        # Validate MilestonePSTools exists
+        validate_module()
         # Dictionary with the IP of the servers
-        IP_SERVERS = ast.literal_eval(os.environ.get("IP_SERVERS"))
+        IP_SERVERS = dict(ast.literal_eval(os.environ.get("IP_SERVERS")))
         # Run scritps in the servers
         for server in IP_SERVERS:
             if server == "GDL-CORONA":
@@ -115,21 +162,22 @@ def main():
             result = subprocess.run(["powershell", "-Command", command], capture_output=True, encoding="cp437")
             # If there is an error
             if result.returncode != 0:
-                manage_error(result.stderr)
+                manage_error(f'Error occurred during getting response: {result.stderr}')
             # If there is not an error
             else:
-                response_to_xlsx(clear_response(result.stdout), server)
+                response_to_xlsx(clear_response(str(result.stdout)), str(server))
         window_alert("Process finished successfully")
     except Exception as e:
-        window_alert(f"An error occurred: {e}")
+        window_alert(f'An error occurred on main: {e}')
+        return -1
 
 
 def load_env():
     """Load the environment variables."""
     try:
-        load_dotenv(resource_path("./resources/.env"))
+        load_dotenv(resource_path(".\\resources\\.env"))
     except Exception as error:
-        window_alert(f"An error occurred loading the environment variables: {error}")
+        window_alert(f'An error occurred loading the environment variables: {error}')
         sys.exit()
 
 
