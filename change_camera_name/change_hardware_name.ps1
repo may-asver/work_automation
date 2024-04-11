@@ -42,7 +42,7 @@ if ($ip -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$')
             Write-Host "No file selected"
             exit
         }
-        $csv = Import-Csv -Path $path -Delimiter ";" -Encoding "UTF8"
+        $csv = Import-Csv -Path $path -Delimiter "," -Encoding "UTF8"
         # Connect to the server
         Write-Host "Connecting to server" $ip
         Connect-ManagementServer $ip
@@ -55,8 +55,8 @@ if ($ip -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$')
                 Write-Host "Camera" $row.HardwareName "not found"
                 exit
             }
-            Write-Host "Changing hardware name of camera" $camera.Name "to" $row.HardwareName
-            Set-VmsHardware -Hardware $camera -Name $row.NewHardwareName -EV error
+            Write-Host "Changing hardware name of camera" $camera.HardwareName "to" $row.NewHardwareName
+            Set-VmsHardware -Hardware $camera -Name $row.NewHardwareName
         }
         Write-Host "Done"
         # Disconnect from the server
