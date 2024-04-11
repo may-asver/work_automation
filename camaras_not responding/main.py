@@ -34,6 +34,9 @@ def manage_error(error: str):
                                        encoding='cp437')
         if result_policy.stderr != '':
             manage_error(result_policy.stderr)
+    elif error.find("Object reference not set to an instance of an object.") or error.find(
+            "Referencia a objeto no establecida como instancia de un objeto."):
+        window_alert(f'Error while connecting to server: Reinstalar módulo MilestonePSTools')
     else:
         window_alert(error)
 
