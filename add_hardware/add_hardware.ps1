@@ -48,8 +48,7 @@ if ($ip -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$')
         Write-Host "Connecting to server" $ip
         Connect-ManagementServer $ip
         # Add the cameras to the recording server
-        $newHardware = Import-VmsHardware -Path $path
-
+        Import-VmsHardware -Path $path
         Write-Host "Done"
         # Disconnect from the server
         Disconnect-ManagementServer
