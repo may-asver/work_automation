@@ -45,15 +45,17 @@ try
         # Connect to the server
         Connect-ManagementServer $row.ServerIP
         $hardware = Get-Hardware -Name $row.HardwareName
+        # Validate that hardware exists
         if ($null -eq $hardware)
         {
             Write-Host "Camera $row.HardwareName not found"
             exit
         }
-        Write-Host "Changing name of camera $hardware.HardwareName"
-        $camera = Get-VmsCamera -Hardware $hardware
-        Set-VmsHardware -Hardware $hardware -Name $row.NewHardwareName
-        Set-VmsCamera -Camera $camera -Name $row.NewCameraName
+        # Change camera and hardware name
+        Write-Host "Changing name of camera $hardware.HardwareName" # Displays a message to user
+        $camera = Get-VmsCamera -Hardware $hardware # Get camera using hardware parameter
+        Set-VmsHardware -Hardware $hardware -Name $row.NewHardwareName # Change Hardware name
+        Set-VmsCamera -Camera $camera -Name $row.NewCameraName # Change camera name
         # Disconnect from the server
         Disconnect-ManagementServer
     }
