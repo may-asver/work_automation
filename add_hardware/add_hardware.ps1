@@ -55,15 +55,20 @@ if ($ip -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$')
     }
     catch
     {
-        Write-Host "Error:" $error
-        if ($error -match "ServerNotFound") {
-            Write-Host "Server with IP '$ip' not exists or server unreachable"
+        $errorMessage = $_.Exception.Message
+        if ($errorMessage -match "ServerNotFound") {
+            Write-Error -Message "Server with IP $ip not exists or server unreachable"
         }
-        elif ($error -match "The hardware is already defined") {
-            Write-Host "Some Hardware already exists. Verify the list."
+        elif ($errorMessage -match "The hardware is already defined") {
+            Write-Error -Message "Some Hardware already exists. Verify the list."
+        }
+        else {
+            Write-Error -Message "Error during the process: $errorMessage"
         }
     }
 
 } else {
     Write-Host "Invalid IP address"
 }
+
+Read-Host -Prompt "Presiona Enter para salir"
