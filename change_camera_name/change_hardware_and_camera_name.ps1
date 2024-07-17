@@ -64,6 +64,6 @@ try
 }
 catch
 {
-    Write-Host "Error:" $error
+    Write-Error "Error:" $error
 }
 
