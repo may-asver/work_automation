@@ -142,3 +142,4 @@ cameras_not_responding.xlsx
 .idea/.git.iml
 *.txt
 all_functions/resources/logo.ico
+all_functions/resources/.env
