@@ -64,10 +64,9 @@ if ($ip -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$')
     }
     catch
     {
-        Write-Host "Error:" $error
+        Write-Error "Error:" $error
     }
-
 } else {
-    Write-Host "Invalid IP address"
+    Write-Error "Invalid IP address"
 }
 
