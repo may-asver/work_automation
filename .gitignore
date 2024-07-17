@@ -143,3 +143,4 @@ cameras_not_responding.xlsx
 *.txt
 all_functions/resources/logo.ico
 all_functions/resources/.env
+*.csv~
