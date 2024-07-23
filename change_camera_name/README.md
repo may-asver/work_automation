@@ -18,10 +18,12 @@ Script to change HardwareName of a list of cameras on CSV file.  <br />
 
 The CSV file that lists the cameras to change its name needs to include the HardwareId and the new HardwareName.  <br />  <br />
 Example:  <br />
-```"HardwareName","NewHardwareName"``` <br />
-```"sg561-0ghb","Camera 1"``` <br />
-```"sg561-0ghk","Camera 2"``` <br />
-```"sg561-0gui","Camera 3"``` <br />
+````
+"HardwareName","NewHardwareName"
+"sg561-0ghb","Camera 1"
+"sg561-0ghk","Camera 2"
+"sg561-0gui","Camera 3"
+````
 <br />
 Where ```"HardwareName","NewHardwareName"``` is the header of the CSV file.  <br />
 The following lines are the cameras to change its name.  <br />
@@ -31,10 +33,28 @@ Script to change CameraName of a list of cameras on CSV file.  <br />
 
 The CSV file that lists the cameras to change its name needs to include the camera's name and the new name.  <br />  <br />
 Example:  <br />
-```"CameraName","NewCameraName"``` <br />
-```"sg561-0ghb","Camera 1"``` <br />
-```"sg561-0ghk","Camera 2"``` <br />
-```"sg561-0gui","Camera 3"``` <br />
+````
+"CameraName","NewCameraName"
+"sg561-0ghb","Camera 1"
+"sg561-0ghk","Camera 2"
+"sg561-0gui","Camera 3"
+````
 <br />
 Where ```"CameraName","NewCameraName"``` is the header of the CSV file.  <br />
 The following lines are the cameras to change its name.  <br />
+
+## Change Hardware and Camera Name
+Script to change HardwareName and CameraName of a list of cameras on CSV file.  <br />
+
+The CSV file that lists the cameras to change its name needs to include the HardwareName, the new HardwareName.  
+the CameraName, the new CameraName and the recording server IP where camera is located. <br />  <br />
+Example:  <br />
+````
+"HardwareName","CameraName","NewHardwareName","NewCameraName","ServerIP"
+"sg561-0ghb","Camera 1","Camera1-0ghb","Camera-01","10.0.1.1"
+"sg561-0ghk","Camera 2","Camera2-0ghb","Camera-02","10.0.1.1"
+"sg561-0gui","Camera 3","Camera3-0ghb","Camera-03","10.0.1.1"
+````
+<br />
+Where ```"HardwareName","CameraName","NewHardwareName","NewCameraName","ServerIP"``` is the header of the CSV file.  <br />
+The following lines are the cameras to change its hardware and camera name.  <br />
