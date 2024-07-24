@@ -1,12 +1,15 @@
 <#
 # Script to add a list of cameras to a recording server in Milestone from a CSV file.
-  Input: IP address of the server, CSV file with the list of cameras to add and recording server name.
+  Input: IP address of the server, CSV file with the list of cameras to add.
   Output: Message of success
   Requirements: PowerShell, MilestonePSTools module v23.2.3, CSV file
 
   Author: Maya Aguirre
   Date: 2023-12-14
 #>
+
+# Set action preference to handle the errors in catch
+$ErrorActionPreference = "Stop"
 
 # Get input for IP address
 $ip = Read-Host "Enter the server IP address"
@@ -38,37 +41,40 @@ if ($ip -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$')
     {
         # Import the CSV file
         Write-Host "Select the CSV file"
-        $path = Invoke-Command -ScriptBlock ${function:Select-File}
+        $path = Select-File
         if ($null -eq $path)
         {
-            Write-Host "No file selected"
-            exit
+            Write-Error "No file selected"
         }
         # Connect to the server
         Write-Host "Connecting to server" $ip
         Connect-ManagementServer $ip
+        # Validate that required parameters are not empty
+        $csv = Import-Csv -Path $path -Delimiter "," -Encoding "Default"
+        $number_line = 1
+        foreach ($row in $csv)
+        {
+            $number_line ++
+            if ($row.Address -eq "" -or $row.UserName -eq "" -or $row.Password -eq "" -or $row.RecordingServer -eq "")
+            {
+                Write-Error "Alguno de los parametros requeridos esta vacio en la linea $number_line"
+            }
+        }
         # Add the cameras to the recording server
         Import-VmsHardware -Path $path
+        # Advise to user that process has finished
         Write-Host "Done"
         # Disconnect from the server
         Disconnect-ManagementServer
     }
     catch
     {
-        $errorMessage = $_.Exception.Message
-        if ($errorMessage -match "ServerNotFound") {
-            Write-Error -Message "Server with IP $ip not exists or server unreachable"
-        }
-        elif ($errorMessage -match "The hardware is already defined") {
-            Write-Error -Message "Some Hardware already exists. Verify the list."
-        }
-        else {
-            Write-Error -Message "Error during the process: $errorMessage"
-        }
+        Write-Output "Error during the process: $_"
     }
 
 } else {
-    Write-Host "Invalid IP address"
+    Write-Output "Invalid IP address"
 }
 
-Read-Host -Prompt "Presiona Enter para salir"
+# Set pause to read errors before close the main window
+Read-Host -Prompt "Presione Enter para cerrar la ventana"
