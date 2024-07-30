@@ -8,6 +8,6 @@ The list is saved in a xlxs file and separated by server.  <br />
 - Python libraries: dotenv, PySimpleGUI, openpyxl.
 
 ## Usage
-1. Download the script with the resources folder.
-2. Make a .exe file using `pyinstaller` Python library or install needed libraries to run in Python.
+1. Download the script with the folder _resources_.
+2. Make a .exe file using `pyinstaller` (`pyinstaller main.spec`) or install needed libraries to run it in Python.
 3. Run script and wait for success message.
