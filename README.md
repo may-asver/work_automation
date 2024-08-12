@@ -111,3 +111,15 @@ The following lines are the hardware to move from a recording server to another 
 **The first line must be written like in the example**, which indicates the header.  <br />
 **NOTE:** The delimiter should be a comma (,). Also, the new recording server should be in the same main server as the current one.  <br /> <br />
 **The storage must to exists in the new recording server.**
+
+## Get cameras
+Script to get cameras report from a list of Milestone servers and save it in a CSV file for each server.
+
+### How to use
+1. Download the .ps1 file
+2. Set execution policies to run the script
+3. Initialize `$servers` variable as a hashtable array.
+4. Save changes.
+5. Run script.
+6. Select a folder to save the csv files.
+7. Wait to done message.
