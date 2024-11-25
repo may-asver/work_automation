@@ -10,6 +10,53 @@
 # Set action preference to handle the errors in catch
 $ErrorActionPreference = "Stop"
 
+# Function to validate if MilestonePSTools module is installed
+function Validate-Tools
+{
+    if ($null -eq (Get-Module -Name 'MilestonePSTools'))
+    {
+        return $null
+    }
+    else
+    {
+        Import-Module -Name 'MilestonePSTools'
+        return 'installed'
+    }
+}
+
+# Function to install MilestonPSTools
+function Install-MilestoneModule
+{
+    Write-Host 'Setting SecurityProtocol to TLS 1.2 and greater' -ForegroundColor Green
+    $protocol = [Net.SecurityProtocolType]::SystemDefault
+    [enum]::GetNames([Net.SecurityProtocolType]) | Where-Object {
+        # Match any TLS version greater than 1.1
+                ($_ -match 'Tls(\d)(\d+)?') -and ([version]("$($Matches[1]).$([int]$Matches[2])")) -gt 1.1
+    } | Foreach-Object { $protocol = $protocol -bor [Net.SecurityProtocolType]::$_ }
+    [Net.ServicePointManager]::SecurityProtocol = $protocol
+
+    if ($null -eq (Get-PackageSource -Name NuGet -ErrorAction Ignore)) {
+        Write-Host 'Registering NuGet package source' -ForegroundColor Green
+        $null = Register-PackageSource -Name NuGet -Location https://www.nuget.org/api/v2 -ProviderName NuGet -Trusted -Force
+    }
+
+    $nugetProvider = Get-PackageProvider -Name NuGet -ErrorAction Ignore
+    $requiredVersion = [Microsoft.PackageManagement.Internal.Utility.Versions.FourPartVersion]::Parse('2.8.5.201')
+    if ($null -eq $nugetProvider -or $nugetProvider.Version -lt $requiredVersion) {
+        Write-Host 'Installing NuGet package provider' -ForegroundColor Green
+        $null = Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+    }
+
+    if ($null -eq (Get-Module -ListAvailable PowerShellGet | Where-Object Version -ge 2.2.5)) {
+        Write-Host 'Installing PowerShellGet 2.2.5 or greater' -ForegroundColor Green
+        $null = Install-Module PowerShellGet -MinimumVersion 2.2.5 -Scope CurrentUser -AllowClobber -Force -ErrorAction Stop
+    }
+
+    Write-Host 'Installing MilestonePSTools' -ForegroundColor Green
+    Install-Module MilestonePSTools -RequiredVersion 23.3.1 -Scope CurrentUser -Force -ErrorAction Stop -SkipPublisherCheck -AllowClobber
+    Import-Module 'MilestonePSTools'
+}
+
 # Function that opens a file dialog to select a CSV file
 function Select-File
 {
@@ -34,6 +81,11 @@ function Select-File
 # Main processes to change hardware name and camera name
 try
 {
+    # Validate if MilestonePSTools module is installed
+    if ($null -eq (Validate-Tools))
+    {
+        Install-MilestoneModule
+    }
     # Import the CSV file
     Write-Host "Select the CSV file"
     $path = Select-File
@@ -49,6 +101,8 @@ try
     # Change the name of each camera from the CSV file
     foreach ($row in $csv)
     {
+        # Sum 1 to number line
+        $number_line ++
         # Validate that parameters are not null
         if ('' -eq $row.HardwareName -or '' -eq $row.CameraName -or '' -eq $row.NewHardwareName -or '' -eq $row.NewCameraName -or '' -eq $row.ServerIP)
         {
@@ -67,14 +121,19 @@ try
             # Disconnect from the server
             Disconnect-ManagementServer
         }
-        # Sum 1 to number line
-        $number_line ++
     }
     Write-Host "Done"
 }
 catch
 {
-    Write-Output "Ocurrio un error: $_"
+    if ($_ -match "Modulo de Milestone no instalado")
+    {
+
+    }
+    else
+    {
+        Write-Output "Ocurrio un error: $_"
+    }
 }
 
 # Set pause to read errors before close the main window
