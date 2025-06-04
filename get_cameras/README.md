@@ -1,8 +1,8 @@
 # Get cameras
-Script to get cameras report from a list of Milestone servers and save it in a CSV file for each server.
+Script to get cameras report from a list of Milestone servers and save it in a CSV file.
 
 ## Requirements
-- MilestonePSTools Powershell Module
+- MilestonePSTools PowerShell Module on version 22.3.0 or above. (If server version is 2020 R3 you will need the module version 22.3.0).
 - User with admin privileges on Milestone servers
 - User with permissions to run scripts
 
