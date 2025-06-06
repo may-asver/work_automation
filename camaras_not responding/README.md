@@ -3,9 +3,9 @@ This script is coded in Python language, and makes consults to all Milestone ser
 The list is saved in a xlsx file and separated by server.  <br />
 
 ## Requirements
-- Powershell module: MilestonePSTools version 23.2.3
+- Powershell module: MilestonePSTools version 24.2.1 or above
 - Python 3.7 or above.
-- Python libraries: dotenv, PySimpleGUI, openpyxl.
+- Python libraries: dotenv, FreeSimpleGUI, openpyxl, datetime.
 
 ## Usage
 1. Download the script with the folder _resources_.

@@ -10,9 +10,10 @@ import ast
 import subprocess
 import os
 from dotenv import load_dotenv
-import PySimpleGUI as Sg
+import FreeSimpleGUI as Sg
 import openpyxl
 import sys
+from datetime import date
 
 
 def resource_path(relative_path: str):
@@ -26,7 +27,7 @@ def resource_path(relative_path: str):
 def manage_error(error: str):
     """Manage common errors while running the script."""
     if "No se puede enlazar el argumento al parámetro 'Hardware' porque es nulo." in error:
-        window_alert("The server is not responding")
+        window_alert("El servidor no responde.")
     elif error.find("ejecución de scripts está deshabilitada") > 0:
         command = os.environ.get("SET_POLICY")
         # Set policy to run script
@@ -34,9 +35,6 @@ def manage_error(error: str):
                                        encoding='cp437')
         if result_policy.stderr != '':
             manage_error(result_policy.stderr)
-    elif error.find("Object reference not set to an instance of an object.") or error.find(
-            "Referencia a objeto no establecida como instancia de un objeto."):
-        window_alert(f'Error while connecting to server: Reinstalar módulo MilestonePSTools')
     else:
         window_alert(error)
 
@@ -56,6 +54,7 @@ def install_module():
         if result.stderr != '':
             manage_error(result.stderr)
         subprocess.run(["powershell", "-File", ruta_script])
+        return None
     except Exception as error:
         window_alert(f'An error occurred during installing module: {error}')
         return -1
@@ -65,14 +64,17 @@ def validate_module():
     """
         Validates if the module MilestonePSTools is installed in the current machine with a PowerShell command written
         in the .env file.
-        If in not installed, call the function install_module()
+        If is not installed, call the function install_module()
     """
     try:
         print('Validating module')
         command = os.environ.get("VALIDATE_MODULE")
         result = subprocess.run(["powershell", "-Command", command], capture_output=True)
         if result.stdout == b'':
+            print(f'Installing module')
             install_module()
+            return None
+        return None
     except Exception as error:
         window_alert(f'An error occurred during validating module: {error}')
         return -1
@@ -99,6 +101,7 @@ def window_alert(message: str):
             if event == Sg.WIN_CLOSED or event == Sg.TIMEOUT_KEY:
                 break
     window.close()
+    return None
 
 
 def clear_response(result: str):
@@ -120,14 +123,17 @@ def response_to_xlsx(response: str, server: str):
         Then write the data to the sheet. Finally, save the workbook.
     """
     try:
-        if not os.path.exists("cameras_not_responding.xlsx"):
+        print(f'Formatting response.')
+        today_date = date.today() # Get date
+        file_name = f'cameras_not_responding-{today_date}.xlsx'
+        if not os.path.exists(file_name):
             # Create a workbook
             workbook = openpyxl.Workbook()
             sheet = workbook.active
             sheet.title = server
         else:
             # Open the workbook
-            workbook = openpyxl.load_workbook("cameras_not_responding.xlsx")
+            workbook = openpyxl.load_workbook(file_name)
             # Select the sheet
             if server in workbook.sheetnames:
                 sheet = workbook[server]
@@ -140,8 +146,10 @@ def response_to_xlsx(response: str, server: str):
             for index in range(len(response)):
                 sheet.cell(row=index + 1, column=1).value = response[index].rstrip()
         # Save the workbook
-        workbook.save("cameras_not_responding.xlsx")
+        print(f'Saving workbook.')
+        workbook.save(file_name)
         workbook.close()
+        return None
     except Exception as e:
         window_alert(f'An error occurred saving the response: {e}')
         return -1
@@ -155,13 +163,14 @@ def main():
         # Validate MilestonePSTools exists
         validate_module()
         # Dictionary with the IP of the servers
-        IP_SERVERS = dict(ast.literal_eval(os.environ.get("IP_SERVERS")))
-        # Run scritps in the servers
-        for server in IP_SERVERS:
-            if server == "GDL-CORONA":
-                command = os.environ.get("COMMAND_CORONA").format(IP_SERVERS[server])
-            else:
-                command = os.environ.get("COMMAND").format(IP_SERVERS[server])
+        servers = dict(ast.literal_eval(os.environ.get("IP_SERVERS")))
+        # Run scripts in the servers
+        for server in servers:
+            print(server)
+            # if server == "GDL-CORONA":
+            #     command = os.environ.get("COMMAND_CORONA").format(servers[server])
+            # else:
+            command = os.environ.get("COMMAND").format(servers[server])
             result = subprocess.run(["powershell", "-Command", command], capture_output=True, encoding="cp437")
             # If there is an error
             if result.returncode != 0:
@@ -169,7 +178,8 @@ def main():
             # If there is not an error
             else:
                 response_to_xlsx(clear_response(str(result.stdout)), str(server))
-        window_alert("Process finished successfully")
+        window_alert("Process finished")
+        return None
     except Exception as e:
         window_alert(f'An error occurred on main: {e}')
         return -1
