@@ -1,4 +1,4 @@
-$required_version = 24.2.1
-Write-Host 'Installing MilestonePSTools'
-Install-Module MilestonePSTools -RequiredVersion $required_version -Scope CurrentUser -Force -ErrorAction Stop -SkipPublisherCheck -AllowClobber
-Write-Host 'Installing Module done'
+$required_version = '24.2.1'
+Write-Output 'Installing module'
+Install-Module MilestonePSTools -RequiredVersion $required_version -Force -SkipPublisherCheck -Scope CurrentUser
+Write-Output 'Installing Module done'

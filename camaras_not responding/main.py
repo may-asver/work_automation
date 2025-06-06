@@ -1,5 +1,5 @@
 """
-    Script to automate the process of getting cameras which are not responding.
+    Script to automate the process of getting cameras with state "not responding".
 
     Author: Maya Aguirre
     Date: 2023-02-02
@@ -47,7 +47,6 @@ def install_module():
     """
     try:
         # Install the module
-        print('Installing module')
         ruta_script = resource_path(os.environ.get("SCRIPT_INSTALL_MODULE"))
         result = subprocess.run(["powershell", "-File", ruta_script], capture_output=True, encoding='cp437')
         # If it gets error
@@ -71,7 +70,6 @@ def validate_module():
         command = os.environ.get("VALIDATE_MODULE")
         result = subprocess.run(["powershell", "-Command", command], capture_output=True)
         if result.stdout == b'':
-            print(f'Installing module')
             install_module()
             return None
         return None
@@ -173,15 +171,15 @@ def main():
             command = os.environ.get("COMMAND").format(servers[server])
             result = subprocess.run(["powershell", "-Command", command], capture_output=True, encoding="cp437")
             # If there is an error
-            if result.returncode != 0:
-                manage_error(f'Error occurred during getting response: {result.stderr}')
+            if result.returncode != 0 or result.stderr != '':
+                raise RuntimeError(f'Error occurred during getting response: {result.stderr}')
             # If there is not an error
             else:
                 response_to_xlsx(clear_response(str(result.stdout)), str(server))
         window_alert("Process finished")
         return None
     except Exception as e:
-        window_alert(f'An error occurred on main: {e}')
+        window_alert(f'An error occurred: {e}')
         return -1
 
 
