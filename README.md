@@ -2,7 +2,7 @@
 Tasks automated with PowerShell for Milestone (VMS) servers.  <br />
 
 ## General requirements
-- Powershell module: MilestonePSTools version 23.2.3
+- Powershell module: MilestonePSTools version 24.2.1 or above
 - User with admin privilege or necessary permissions to run the tasks in the server and/or PC
 - CSV file (in some scripts)
 
@@ -48,7 +48,7 @@ The list is saved in a xlsx file and separated by server.  <br />
 
 **NOTE**: You need an environment file with the sensitive variables (servers IP address, servers name, MilestonePSTools commands).
 
-## Change hardware or camera name, or both
+## Change hardware name, camera name, or both
 Script to automate the process of changing camera HardwareName or CameraName, or both from Milestone Server of a camera's list.  <br />
 The script needs a CSV file, which indicates the hardware id and the new hardware name.  <br />
 The CSV file should look like this to change _HardwareName_:
