@@ -10,6 +10,7 @@
 
 # GLOBAL VARIABLES
 $module_name = "MilestonePSTools"
+$required_version = "24.2.1"
 
 # Set action preference to handle the errors in catch
 $ErrorActionPreference = "Continue"
@@ -34,14 +35,16 @@ try
 {
     # Validate if the version needed is installed
     $versions = Get-InstalledModule -Name $module_name -AllVersions
-    if ($versions.Version[0] -notlike "22.*")
+    if (-not ($versions.Version -contains [version]$required_version))
     {
-        throw "La version del modulo no es compatible."
+        Write-Output "Instalando módulo..."
+        Install-Module MilestonePSTools -RequiredVersion $required_version -Scope CurrentUser -Force -ErrorAction Stop -SkipPublisherCheck -AllowClobber
     }
 
-    # Import minimum version installed
-    Import-Module $module_name -RequiredVersion $versions.Version[0]
-    
+    # Import version installed
+    Write-Output "Importando módulo..."
+    Import-Module $module_name -RequiredVersion $required_verison
+
     # Select folder to save the file
     $folder_path = Select-FolderDialog
 
@@ -56,6 +59,7 @@ try
         @{ Nombre = "SERVER4"; IP = "1.1.1.5" }
     )
     # Get list of cameras of each server
+    Write-Output "Obteniendo listados..."
     foreach ($server in $servers)
     {
         $serverName = $server.Nombre
@@ -64,14 +68,14 @@ try
         # Create file and name
         $fileName = "$date-$($serverName)"
         $csvFile = Join-Path -Path $folder_path -ChildPath "$fileName.csv"
-         
+
         # Connect to server
         Write-Output "$($serverName) $($serverIP)" # Message to know which server is
         Connect-ManagementServer $serverIP
 
         # Advise to user in which server is working
         Write-Output "Obteniendo la lista del servidor $($serverName)"
-        
+
         # Get list of cameras
         Get-VmsCameraReport -IncludePlainTextPasswords | Export-csv -Path $csvFile -Encoding "Default"
 
@@ -85,7 +89,7 @@ catch
 {
     # Manage errors
     Write-Output "Occurrio un error: $_"
-    
+
     # Close session
     Disconnect-ManagementServer
 }
