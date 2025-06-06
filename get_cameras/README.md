@@ -2,11 +2,11 @@
 Script to get cameras report from a list of Milestone servers and save it in a CSV file.
 
 ## Requirements
-- MilestonePSTools PowerShell Module on version 22.3.0 or above. (If server version is 2020 R3 you will need the module version 22.3.0).
+- MilestonePSTools PowerShell Module on version 24.2.1 or above.
 - User with admin privileges on Milestone servers
 - User with permissions to run scripts
 
-**NOTE**: You can install the MilestonePSTools module  with `Install-Module -Name MilestonePSTools -RequiredVersion 23.3.1` command.
+**NOTE**: You can install the MilestonePSTools module  with `Install-Module -Name MilestonePSTools -RequiredVersion 24.2.1` command.
 If you have some problems, try to install for all user as the following link https://www.milestonepstools.com/installation/#quick-install.
 
 ## How to use
