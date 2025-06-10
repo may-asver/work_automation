@@ -26,9 +26,9 @@ def resource_path(relative_path: str):
 
 def manage_error(error: str):
     """Manage common errors while running the script."""
-    if "No se puede enlazar el argumento al parámetro 'Hardware' porque es nulo." in error:
+    if "No se puede enlazar el argumento al parámetro 'Hardware' porque es nulo." in error or "ServerNotFoundMIPException" in error:
         window_alert("El servidor no responde.")
-    elif error.find("ejecución de scripts está deshabilitada") > 0:
+    elif error.find("ejecución de scripts está deshabilitada") > 0 or error.find("running scripts is disabled on this system") > 0:
         command = os.environ.get("SET_POLICY")
         # Set policy to run script
         result_policy = subprocess.run(["powershell", "-Command", command], capture_output=True,
@@ -172,7 +172,7 @@ def main():
             result = subprocess.run(["powershell", "-Command", command], capture_output=True, encoding="cp437")
             # If there is an error
             if result.returncode != 0 or result.stderr != '':
-                raise RuntimeError(f'Error occurred during getting response: {result.stderr}')
+                manage_error(f'Error occurred during getting response: {result.stderr}')
             # If there is not an error
             else:
                 response_to_xlsx(clear_response(str(result.stdout)), str(server))
