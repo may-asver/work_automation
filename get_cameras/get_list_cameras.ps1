@@ -42,7 +42,7 @@ try
     }
 
     # Import version installed
-    Write-Output "Importando módulo..."
+    Write-Output "Importando m�dulo..."
     Import-Module $module_name -RequiredVersion $required_verison
 
     # Select folder to save the file
