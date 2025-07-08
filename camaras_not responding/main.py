@@ -35,6 +35,8 @@ def manage_error(error: str):
                                        encoding='cp437')
         if result_policy.stderr != '':
             manage_error(result_policy.stderr)
+    elif error.find("Exception") > 0:
+        window_alert(f'Ha surgido una excepcion: {error}.')
     else:
         window_alert(error)
 
